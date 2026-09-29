@@ -8,6 +8,7 @@
 import SwiftUI
 
 @main
+// The app entry point creates the first window and shows ContentView.
 struct NextWordApp: App {
     var body: some Scene {
         WindowGroup {
