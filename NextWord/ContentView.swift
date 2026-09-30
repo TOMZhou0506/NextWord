@@ -1,6 +1,6 @@
 import SwiftUI
 
-// The home screen manages a local name and opens the article reader.
+// The main screen holds the bottom tabs and the local Home content.
 struct ContentView: View {
     // AppStorage keeps the name between app launches; State holds temporary edits.
     @AppStorage("displayName") private var displayName = ""
@@ -13,6 +13,31 @@ struct ContentView: View {
     }
 
     var body: some View {
+        // TabView keeps the five main sections in one bottom navigation bar.
+        TabView {
+            home
+                .tabItem { Label("Home", systemImage: "house") }
+
+            NavigationStack {
+                ArticleReaderView()
+            }
+            .tabItem { Label("Article", systemImage: "doc.text") }
+
+            placeholder("Video")
+                .tabItem { Label("Video", systemImage: "play.rectangle") }
+
+            NavigationStack {
+                VocabularyView()
+            }
+            .tabItem { Label("Vocabulary", systemImage: "books.vertical") }
+
+            placeholder("Profile")
+                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+        }
+    }
+
+    // Reuse the current welcome and local-name screen as Home.
+    private var home: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
                 Image(systemName: "book.closed.fill")
@@ -60,5 +85,10 @@ struct ContentView: View {
             .padding(24)
             .navigationTitle("NextWord")
         }
+    }
+
+    // Temporary text for sections we have not built yet.
+    private func placeholder(_ title: String) -> some View {
+        ContentUnavailableView("\(title) coming soon", systemImage: "square.dashed")
     }
 }

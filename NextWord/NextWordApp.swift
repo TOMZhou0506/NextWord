@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 // The app entry point creates the first window and shows ContentView.
@@ -14,5 +15,7 @@ struct NextWordApp: App {
         WindowGroup {
             ContentView()
         }
+        // Keep saved vocabulary available across tabs and app launches.
+        .modelContainer(for: SavedWord.self)
     }
 }
