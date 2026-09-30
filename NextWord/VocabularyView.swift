@@ -1,29 +1,25 @@
 import SwiftUI
 import SwiftData
 
+// Show vocabulary totals and links to the five learning stages.
 struct VocabularyView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedWord.savedAt, order: .reverse) private var words: [SavedWord]
     @AppStorage("didSeedVocabularyDemo_v1") private var didSeedDemo = false
     @State private var seedError: String?
+    @State private var isReviewPresented = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 22) {
                 totalCard
                 stageSummary
+                reviewPlan
 
                 if let seedError {
                     Text("Could not add demo words: \(seedError)")
                         .font(.footnote)
                         .foregroundStyle(.red)
-                }
-
-                Text("Words by stage")
-                    .font(.title2.bold())
-
-                ForEach(LearningStage.allCases, id: \.self) { stage in
-                    stageSection(stage)
                 }
             }
             .padding()
@@ -31,8 +27,12 @@ struct VocabularyView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Vocabulary")
         .task { addDemoWordsIfNeeded() }
+        .fullScreenCover(isPresented: $isReviewPresented) {
+            VocabularyReviewView(words: reviewWords)
+        }
     }
 
+    // The total updates automatically when saved words change.
     private var totalCard: some View {
         VStack(spacing: 6) {
             Text("Your vocabulary")
@@ -51,57 +51,68 @@ struct VocabularyView: View {
         )
     }
 
+    // Each coloured row opens the words in that stage.
     private var stageSummary: some View {
         VStack(spacing: 16) {
             ForEach(LearningStage.allCases, id: \.self) { stage in
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(stage.colour)
-                        .frame(width: 12, height: 12)
-                    Text(stage.label)
-                    Spacer()
-                    Text("\(wordsIn(stage).count)")
-                        .monospacedDigit()
+                NavigationLink {
+                    VocabularyStageView(stage: stage)
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(stage.colour)
+                            .frame(width: 12, height: 12)
+                        Text(stage.label)
+                        Spacer()
+                        Text("\(wordsIn(stage).count)")
+                            .monospacedDigit()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                    .foregroundStyle(.primary)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(20)
         .background(.white, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    private func stageSection(_ stage: LearningStage) -> some View {
-        let stageWords = wordsIn(stage)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Circle().fill(stage.colour).frame(width: 12, height: 12)
-                Text(stage.label).font(.headline)
-                Spacer()
-                Text("\(stageWords.count)")
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 0) {
-                if stageWords.isEmpty {
-                    Text("No words yet")
-                        .foregroundStyle(.secondary)
-                        .padding(14)
-                } else {
-                    ForEach(stageWords) { word in
-                        Text(word.word)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
-                        if word.id != stageWords.last?.id {
-                            Divider().padding(.leading, 14)
-                        }
-                    }
-                }
-            }
-            .background(.white, in: RoundedRectangle(cornerRadius: 16))
-        }
-    }
-
+    // Filter the local SwiftData results for one stage.
     private func wordsIn(_ stage: LearningStage) -> [SavedWord] {
         words.filter { $0.stage == stage }
+    }
+
+    // Review the three not-yet-familiar stages, with red words first.
+    private var reviewWords: [SavedWord] {
+        let stages: [LearningStage] = [.unfamiliar, .learning, .improving]
+        return Array(words
+            .filter { stages.contains($0.stage) }
+            .sorted { (stages.firstIndex(of: $0.stage) ?? stages.count) < (stages.firstIndex(of: $1.stage) ?? stages.count) }
+            .prefix(20))
+    }
+
+    private var reviewPlan: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Review plan")
+                .font(.title2.bold())
+            Text("Practice red, orange and yellow words. The current session includes up to 20 words.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Button {
+                isReviewPresented = true
+            } label: {
+                Text("Start Review · \(reviewWords.count) words")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(reviewWords.isEmpty)
+        }
+        .padding(20)
+        .background(.white, in: RoundedRectangle(cornerRadius: 18))
     }
 
     // Add sample words once, without changing words already saved by the user.
@@ -132,7 +143,32 @@ struct VocabularyView: View {
     }
 }
 
-private extension LearningStage {
+// Show only the English words saved in the selected learning stage.
+private struct VocabularyStageView: View {
+    let stage: LearningStage
+    @Query(sort: \SavedWord.word) private var words: [SavedWord]
+
+    private var stageWords: [SavedWord] {
+        words.filter { $0.stage == stage }
+    }
+
+    var body: some View {
+        List {
+            ForEach(stageWords) { word in
+                Text(word.word)
+            }
+        }
+        .overlay {
+            if stageWords.isEmpty {
+                ContentUnavailableView("No words yet", systemImage: "text.book.closed")
+            }
+        }
+        .navigationTitle(stage.label)
+    }
+}
+
+// Keep each stage's label and colour in one place.
+extension LearningStage {
     var label: String {
         switch self {
         case .unfamiliar: "Red · Unfamiliar"
