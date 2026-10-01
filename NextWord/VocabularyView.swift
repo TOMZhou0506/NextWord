@@ -26,6 +26,16 @@ struct VocabularyView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Vocabulary")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    VocabularySearchView()
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Search dictionary")
+            }
+        }
         .task { addDemoWordsIfNeeded() }
         .fullScreenCover(isPresented: $isReviewPresented) {
             VocabularyReviewView(words: reviewWords)
@@ -77,7 +87,7 @@ struct VocabularyView: View {
             }
         }
         .padding(20)
-        .background(.white, in: RoundedRectangle(cornerRadius: 18))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
     }
 
     // Filter the local SwiftData results for one stage.
@@ -112,7 +122,7 @@ struct VocabularyView: View {
             .disabled(reviewWords.isEmpty)
         }
         .padding(20)
-        .background(.white, in: RoundedRectangle(cornerRadius: 18))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
     }
 
     // Add sample words once, without changing words already saved by the user.

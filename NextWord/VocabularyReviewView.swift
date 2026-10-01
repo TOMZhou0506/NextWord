@@ -10,6 +10,9 @@ struct VocabularyReviewView: View {
     @State private var translations: [UUID: String] = [:]
     @State private var translationErrors: [UUID: String] = [:]
     @State private var prefetchTask: Task<Void, Never>?
+    @State private var dictionaryEntry: WordsetEntry?
+    @State private var dictionaryMessage = ""
+    @State private var isDictionaryLoading = false
 
     private var isFinished: Bool { currentIndex >= words.count }
 
@@ -50,6 +53,7 @@ struct VocabularyReviewView: View {
         .background(Color(.systemGroupedBackground))
         .onAppear { prefetchCurrentAndNextFive() }
         .onChange(of: currentIndex) { _, _ in prefetchCurrentAndNextFive() }
+        .task(id: currentIndex) { await loadCurrentDictionaryEntry() }
         .onDisappear {
             prefetchTask?.cancel()
             translations.removeAll()
@@ -100,20 +104,28 @@ struct VocabularyReviewView: View {
             Spacer(minLength: 24)
 
             if isAnswerVisible {
-                if let chinese = translations[word.id] {
-                    Text("DeepL machine translation")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(chinese)
-                        .font(.title3)
-                        .foregroundStyle(.blue)
-                } else if let error = translationErrors[word.id] {
-                    Text(error)
-                        .foregroundStyle(.red)
-                    Button("Retry translation") { retryCurrentWord() }
-                } else {
-                    ProgressView("Translating this word…")
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        if let chinese = translations[word.id] {
+                            Text("DeepL machine translation")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(chinese)
+                                .font(.title3)
+                                .foregroundStyle(.blue)
+                        } else if let error = translationErrors[word.id] {
+                            Text(error)
+                                .foregroundStyle(.red)
+                            Button("Retry translation") { retryCurrentWord() }
+                        } else {
+                            ProgressView("Translating this word…")
+                        }
+
+                        dictionaryDetails
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxHeight: 270)
             } else {
                 Text("Think of the meaning and an example.")
                     .foregroundStyle(.secondary)
@@ -122,8 +134,76 @@ struct VocabularyReviewView: View {
         .frame(maxWidth: .infinity)
         .frame(minHeight: 360)
         .padding(24)
-        .background(.white, in: RoundedRectangle(cornerRadius: 28))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.cyan.opacity(0.2)))
+    }
+
+    // Show Wordset's own fields without inventing missing examples or pronunciations.
+    @ViewBuilder
+    private var dictionaryDetails: some View {
+        Divider()
+        Text("Wordset English dictionary")
+            .font(.headline)
+
+        if isDictionaryLoading {
+            ProgressView("Looking up this word locally…")
+        } else if let dictionaryEntry {
+            ForEach(dictionaryEntry.meanings, id: \.id) { meaning in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(meaning.partOfSpeech.capitalized)
+                        .font(.subheadline.bold())
+                    Text(meaning.definition)
+
+                    if let example = meaning.example {
+                        Text("Example: \(example)")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    let synonyms = meaning.synonyms?.compactMap { $0 } ?? []
+                    if !synonyms.isEmpty {
+                        Text("Synonyms: \(synonyms.joined(separator: ", "))")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 3)
+            }
+        } else {
+            Text(dictionaryMessage)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+
+        Text("Source: Wordset / WordNet · CC BY-SA 4.0")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+    }
+
+    // Start the local lookup when a card appears, before the answer is revealed.
+    @MainActor
+    private func loadCurrentDictionaryEntry() async {
+        guard !isFinished else { return }
+        let word = words[currentIndex]
+        let wordID = word.id
+        dictionaryEntry = nil
+        dictionaryMessage = ""
+        isDictionaryLoading = true
+
+        do {
+            let result = try await WordsetDictionaryService.shared.lookup(word.word)
+            guard !Task.isCancelled, !isFinished, words[currentIndex].id == wordID else { return }
+            if let result, !result.meanings.isEmpty {
+                dictionaryEntry = result
+            } else if result != nil {
+                dictionaryMessage = "Wordset lists this word but provides no definitions."
+            } else {
+                dictionaryMessage = "This word is not in Wordset. The DeepL translation remains available."
+            }
+        } catch {
+            guard !Task.isCancelled, !isFinished, words[currentIndex].id == wordID else { return }
+            dictionaryMessage = "Offline dictionary unavailable: \(error.localizedDescription)"
+        }
+        isDictionaryLoading = false
     }
 
     // Keep at most one DeepL request active while preparing the next five words.
@@ -174,6 +254,6 @@ struct VocabularyReviewView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(30)
-        .background(.white, in: RoundedRectangle(cornerRadius: 28))
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28))
     }
 }
