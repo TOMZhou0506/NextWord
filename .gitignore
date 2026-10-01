@@ -1,0 +1,2 @@
+# Local development credential; never commit the key.
+NextWord/LocalSecrets.plist

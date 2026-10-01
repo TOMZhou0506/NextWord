@@ -7,6 +7,9 @@ struct VocabularyReviewView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var currentIndex = 0
     @State private var isAnswerVisible = false
+    @State private var translations: [UUID: String] = [:]
+    @State private var translationErrors: [UUID: String] = [:]
+    @State private var prefetchTask: Task<Void, Never>?
 
     private var isFinished: Bool { currentIndex >= words.count }
 
@@ -45,6 +48,13 @@ struct VocabularyReviewView: View {
         }
         .padding(20)
         .background(Color(.systemGroupedBackground))
+        .onAppear { prefetchCurrentAndNextFive() }
+        .onChange(of: currentIndex) { _, _ in prefetchCurrentAndNextFive() }
+        .onDisappear {
+            prefetchTask?.cancel()
+            translations.removeAll()
+            translationErrors.removeAll()
+        }
     }
 
     private var header: some View {
@@ -90,18 +100,19 @@ struct VocabularyReviewView: View {
             Spacer(minLength: 24)
 
             if isAnswerVisible {
-                // Demo words have no dictionary meaning until the API is connected.
-                if let meaning = word.meaning, !meaning.isEmpty {
-                    Text(meaning)
+                if let chinese = translations[word.id] {
+                    Text("DeepL machine translation")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(chinese)
                         .font(.title3)
+                        .foregroundStyle(.blue)
+                } else if let error = translationErrors[word.id] {
+                    Text(error)
+                        .foregroundStyle(.red)
+                    Button("Retry translation") { retryCurrentWord() }
                 } else {
-                    Text("Meaning not added yet")
-                        .foregroundStyle(.secondary)
-                }
-                if let example = word.exampleSentence, !example.isEmpty {
-                    Text(example)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    ProgressView("Translating this word…")
                 }
             } else {
                 Text("Think of the meaning and an example.")
@@ -113,6 +124,39 @@ struct VocabularyReviewView: View {
         .padding(24)
         .background(.white, in: RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.cyan.opacity(0.2)))
+    }
+
+    // Keep at most one DeepL request active while preparing the next five words.
+    private func prefetchCurrentAndNextFive() {
+        prefetchTask?.cancel()
+        guard !isFinished else { return }
+
+        let endIndex = min(currentIndex + 5, words.count - 1)
+        prefetchTask = Task { @MainActor in
+            for index in currentIndex...endIndex {
+                if Task.isCancelled { return }
+                let word = words[index]
+                let id = word.id
+                if translations[id] != nil || translationErrors[id] != nil { continue }
+
+                do {
+                    let chinese = try await ReviewTranslationService.translate(word.word)
+                    try Task.checkCancellation()
+                    translations[id] = chinese
+                } catch {
+                    if Task.isCancelled { return }
+                    translationErrors[id] = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func retryCurrentWord() {
+        guard !isFinished else { return }
+        let id = words[currentIndex].id
+        translations.removeValue(forKey: id)
+        translationErrors.removeValue(forKey: id)
+        prefetchCurrentAndNextFive()
     }
 
     private var completionCard: some View {
