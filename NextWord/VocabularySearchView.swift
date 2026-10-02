@@ -10,6 +10,7 @@ struct VocabularySearchView: View {
     @State private var message: String?
     @State private var isSearching = false
     @State private var selectedStage: LearningStage = .unfamiliar
+    @State private var isStagePickerPresented = false
 
     private var existingWord: SavedWord? {
         guard let entry else { return nil }
@@ -60,11 +61,52 @@ struct VocabularySearchView: View {
                 }
 
                 Section("Your familiarity") {
-                    Picker("Learning stage", selection: $selectedStage) {
-                        ForEach(LearningStage.allCases, id: \.self) { stage in
-                            Label(stage.label, systemImage: "circle.fill")
-                                .tag(stage)
+                    Button {
+                        isStagePickerPresented = true
+                    } label: {
+                        HStack {
+                            Text("Learning stage")
+                            Spacer()
+                            Circle()
+                                .fill(selectedStage.colour)
+                                .frame(width: 12, height: 12)
+                            Text(selectedStage.label)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
+                    }
+                    .foregroundStyle(.primary)
+                    .popover(isPresented: $isStagePickerPresented) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(LearningStage.allCases, id: \.self) { stage in
+                                Button {
+                                    selectedStage = stage
+                                    isStagePickerPresented = false
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Circle()
+                                            .fill(stage.colour)
+                                            .frame(width: 14, height: 14)
+                                        Text(stage.label)
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                        if selectedStage == stage {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.tint)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .frame(minWidth: 240)
+                        .padding(.vertical, 8)
+                        .presentationCompactAdaptation(.popover)
                     }
                     Button(existingWord == nil ? "Add to Vocabulary" : "Update Colour") {
                         saveWord(entry)
