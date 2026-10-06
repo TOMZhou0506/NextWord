@@ -36,10 +36,12 @@ struct ArticleWordSheetView: View {
 
                     translationSection
                     dictionarySection
-                    saveSection
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                saveBar
             }
             .navigationTitle("Word details")
             .navigationBarTitleDisplayMode(.inline)
@@ -110,48 +112,53 @@ struct ArticleWordSheetView: View {
         }
     }
 
-    private var saveSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Your familiarity")
-                .font(.headline)
+    // Keep the colour choices and save action visible while definitions scroll.
+    private var saveBar: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Choose a colour")
+                .font(.subheadline.bold())
             if let existingWord {
                 Text("Currently saved as \(existingWord.stage.label).")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Looking up a word does not add it to Vocabulary.")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            ForEach(availableStages, id: \.self) { stage in
-                Button {
-                    selectedStage = stage
-                    saveMessage = nil
-                } label: {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(stage.colour)
-                            .frame(width: 14, height: 14)
-                        Text(stage.label)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        if selectedStage == stage {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.tint)
+            HStack(spacing: 8) {
+                ForEach(availableStages, id: \.self) { stage in
+                    Button {
+                        selectedStage = stage
+                        saveMessage = nil
+                    } label: {
+                        VStack(spacing: 5) {
+                            Circle()
+                                .fill(stage.colour)
+                                .frame(width: 18, height: 18)
+                            Text(stageName(stage))
+                                .font(.caption)
+                                .foregroundStyle(.primary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(stage.colour.opacity(selectedStage == stage ? 0.15 : 0.04),
+                                    in: RoundedRectangle(cornerRadius: 10))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(selectedStage == stage ? stage.colour : .clear, lineWidth: 2)
                         }
                     }
-                    .padding(12)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(stage.label)
+                    .accessibilityAddTraits(selectedStage == stage ? .isSelected : [])
                 }
-                .buttonStyle(.plain)
             }
 
-            Button(existingWord == nil ? "Add to Vocabulary" : "Update colour") {
+            Button {
                 saveWord()
+            } label: {
+                Text(existingWord == nil ? "Add to Vocabulary" : "Update colour")
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .frame(maxWidth: .infinity)
             .disabled(selectedStage == nil)
 
             if let saveMessage {
@@ -159,6 +166,21 @@ struct ArticleWordSheetView: View {
                     .font(.footnote)
                     .foregroundStyle(saveMessage.hasPrefix("Could not") ? .red : .secondary)
             }
+        }
+        .padding(.horizontal)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
+    }
+
+    private func stageName(_ stage: LearningStage) -> String {
+        switch stage {
+        case .unfamiliar: "Red"
+        case .learning: "Orange"
+        case .improving: "Yellow"
+        case .familiar: "Green"
+        case .mastered: "Blue"
         }
     }
 
