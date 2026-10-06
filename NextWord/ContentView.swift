@@ -23,8 +23,10 @@ struct ContentView: View {
             }
             .tabItem { Label("Article", systemImage: "doc.text") }
 
-            placeholder("Video")
-                .tabItem { Label("Video", systemImage: "play.rectangle") }
+            NavigationStack {
+                VideoView()
+            }
+            .tabItem { Label("Video", systemImage: "play.rectangle") }
 
             NavigationStack {
                 VocabularyView()
