@@ -1,10 +1,17 @@
 import SwiftUI
+import SwiftData
 
-// A temporary review session; it does not change learning stages yet.
+// Review saved words and persist each completed result.
 struct VocabularyReviewView: View {
-    let words: [SavedWord]
+    // Keep this session's order stable even when saving a new stage updates the dashboard.
+    @State private var words: [SavedWord]
+
+    init(words: [SavedWord]) {
+        _words = State(initialValue: words)
+    }
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var currentIndex = 0
     // nil means the answer is hidden; the choice decides which buttons appear after reveal.
     @State private var rememberedBeforeReveal: Bool?
@@ -14,6 +21,7 @@ struct VocabularyReviewView: View {
     @State private var dictionaryEntry: WordsetEntry?
     @State private var dictionaryMessage = ""
     @State private var isDictionaryLoading = false
+    @State private var saveError: String?
 
     private var isFinished: Bool { currentIndex >= words.count }
 
@@ -32,11 +40,11 @@ struct VocabularyReviewView: View {
                 if let rememberedBeforeReveal {
                     if rememberedBeforeReveal {
                         HStack(spacing: 12) {
-                            Button { advanceToNextWord() } label: {
+                            Button { finishCurrentWord(rememberedCorrectly: true) } label: {
                                 Text("I was right").frame(maxWidth: .infinity)
                             }
                             .tint(.green)
-                            Button { advanceToNextWord() } label: {
+                            Button { finishCurrentWord(rememberedCorrectly: false) } label: {
                                 Text("I was wrong").frame(maxWidth: .infinity)
                             }
                             .tint(.red)
@@ -44,12 +52,11 @@ struct VocabularyReviewView: View {
                         .buttonStyle(.borderedProminent)
                         .frame(maxWidth: .infinity)
                     } else {
-                        Button("Next Word") { advanceToNextWord() }
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .foregroundStyle(.white)
-                            .background(.cyan, in: RoundedRectangle(cornerRadius: 14))
+                        Button { finishCurrentWord(rememberedCorrectly: false) } label: {
+                            Text("Next Word").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.cyan)
                     }
                 } else {
                     HStack(spacing: 12) {
@@ -71,6 +78,12 @@ struct VocabularyReviewView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .font(.subheadline.bold())
+                }
+
+                if let saveError {
+                    Text("Could not save review: \(saveError)")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
                 }
 
                 Text("Your answer remains private. Be honest with yourself.")
@@ -169,10 +182,27 @@ struct VocabularyReviewView: View {
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.cyan.opacity(0.2)))
     }
 
-    // Step 2 moves to the next card; stage changes will be saved in step 3.
-    private func advanceToNextWord() {
-        currentIndex += 1
-        rememberedBeforeReveal = nil
+    // Save only when the user finishes the card; closing early leaves it unchanged.
+    private func finishCurrentWord(rememberedCorrectly: Bool) {
+        guard !isFinished, rememberedBeforeReveal != nil else { return }
+        let word = words[currentIndex]
+        let stages = LearningStage.allCases
+        guard let oldIndex = stages.firstIndex(of: word.stage) else { return }
+        let nextIndex = rememberedCorrectly
+            ? min(oldIndex + 1, stages.count - 1)
+            : max(oldIndex - 1, 0)
+        word.stage = stages[nextIndex]
+        word.lastReviewedAt = Date()
+
+        do {
+            try modelContext.save()
+            saveError = nil
+            currentIndex += 1
+            rememberedBeforeReveal = nil
+        } catch {
+            modelContext.rollback()
+            saveError = error.localizedDescription
+        }
     }
 
     // Show Wordset's own fields without inventing missing examples or pronunciations.
@@ -283,7 +313,7 @@ struct VocabularyReviewView: View {
                 .foregroundStyle(.green)
             Text("Review complete")
                 .font(.title2.bold())
-            Text("You looked through \(words.count) words. Review results are not saved yet.")
+            Text("You reviewed \(words.count) words. Their learning stages have been saved.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             Button("Done") { dismiss() }
