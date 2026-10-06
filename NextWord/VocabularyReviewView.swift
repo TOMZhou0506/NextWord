@@ -6,7 +6,8 @@ struct VocabularyReviewView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentIndex = 0
-    @State private var isAnswerVisible = false
+    // nil means the answer is hidden; the choice decides which buttons appear after reveal.
+    @State private var rememberedBeforeReveal: Bool?
     @State private var translations: [UUID: String] = [:]
     @State private var translationErrors: [UUID: String] = [:]
     @State private var prefetchTask: Task<Void, Never>?
@@ -28,21 +29,32 @@ struct VocabularyReviewView: View {
 
                 wordCard(words[currentIndex])
 
-                if isAnswerVisible {
-                    Button("Next Word") {
-                        currentIndex += 1
-                        isAnswerVisible = false
+                if let rememberedBeforeReveal {
+                    if rememberedBeforeReveal {
+                        HStack(spacing: 12) {
+                            Button { advanceToNextWord() } label: {
+                                Text("I was right").frame(maxWidth: .infinity)
+                            }
+                            .tint(.green)
+                            Button { advanceToNextWord() } label: {
+                                Text("I was wrong").frame(maxWidth: .infinity)
+                            }
+                            .tint(.red)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        Button("Next Word") { advanceToNextWord() }
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .foregroundStyle(.white)
+                            .background(.cyan, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .foregroundStyle(.white)
-                    .background(.cyan, in: RoundedRectangle(cornerRadius: 14))
                 } else {
-                    // Step 1: both choices reveal the answer; grading is added next.
                     HStack(spacing: 12) {
                         Button {
-                            isAnswerVisible = true
+                            rememberedBeforeReveal = true
                         } label: {
                             Label("I remember", systemImage: "checkmark")
                                 .frame(maxWidth: .infinity)
@@ -50,7 +62,7 @@ struct VocabularyReviewView: View {
                         .tint(.green)
 
                         Button {
-                            isAnswerVisible = true
+                            rememberedBeforeReveal = false
                         } label: {
                             Label("I don't remember", systemImage: "xmark")
                                 .frame(maxWidth: .infinity)
@@ -122,7 +134,7 @@ struct VocabularyReviewView: View {
 
             Spacer(minLength: 24)
 
-            if isAnswerVisible {
+            if rememberedBeforeReveal != nil {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         if let chinese = translations[word.id] {
@@ -155,6 +167,12 @@ struct VocabularyReviewView: View {
         .padding(24)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28))
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.cyan.opacity(0.2)))
+    }
+
+    // Step 2 moves to the next card; stage changes will be saved in step 3.
+    private func advanceToNextWord() {
+        currentIndex += 1
+        rememberedBeforeReveal = nil
     }
 
     // Show Wordset's own fields without inventing missing examples or pronunciations.
