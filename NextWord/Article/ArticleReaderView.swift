@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // This file reads a bundled article and displays it as scrollable text.
 // The article content itself is stored in grass-grow.json.
@@ -36,6 +37,7 @@ private enum ArticleError: LocalizedError {
 
 // Show the article, a loading indicator, or an error message.
 struct ArticleReaderView: View {
+    @Query private var savedWords: [SavedWord]
     @State private var article: Article?
     @State private var errorMessage: String?
     @State private var selectedWord: SelectedArticleWord?
@@ -49,6 +51,15 @@ struct ArticleReaderView: View {
     private static let wordPattern = try! NSRegularExpression(
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
+
+    // Saved words drive every occurrence; mastered words stay tappable but unmarked.
+    private var highlightedStages: [String: LearningStage] {
+        var stages: [String: LearningStage] = [:]
+        for savedWord in savedWords where savedWord.stage != .mastered {
+            stages[savedWord.lookupKey.lowercased()] = savedWord.stage
+        }
+        return stages
+    }
 
     var body: some View {
         ScrollView {
@@ -112,6 +123,7 @@ struct ArticleReaderView: View {
     private func linkedParagraph(_ paragraph: String) -> AttributedString {
         var result = AttributedString()
         var cursor = paragraph.startIndex
+        let stages = highlightedStages
         let matches = Self.wordPattern.matches(
             in: paragraph,
             range: NSRange(paragraph.startIndex..<paragraph.endIndex, in: paragraph)
@@ -129,6 +141,10 @@ struct ArticleReaderView: View {
             destination.queryItems = [URLQueryItem(name: "word", value: token)]
             linkedWord.link = destination.url
             linkedWord.foregroundColor = .primary
+            if let stage = stages[token.lowercased()] {
+                linkedWord.backgroundColor = stage.colour.opacity(0.26)
+                linkedWord.font = .body.bold()
+            }
             result += linkedWord
             cursor = range.upperBound
         }
