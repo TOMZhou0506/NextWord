@@ -57,7 +57,7 @@ actor WordsetDictionaryService {
         if loadedGroup != group {
             let name = "Wordset-\(group)"
             // Xcode may flatten synchronized resources into the app bundle's root.
-            guard let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "Wordset")
+            guard let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "Vocabulary/Wordset")
                 ?? Bundle.main.url(forResource: name, withExtension: "json") else {
                 throw WordsetDictionaryError.missingFile("\(name).json")
             }
