@@ -28,19 +28,38 @@ struct VocabularyReviewView: View {
 
                 wordCard(words[currentIndex])
 
-                Button(isAnswerVisible ? "Next Word" : "Reveal Answer") {
-                    if isAnswerVisible {
+                if isAnswerVisible {
+                    Button("Next Word") {
                         currentIndex += 1
                         isAnswerVisible = false
-                    } else {
-                        isAnswerVisible = true
                     }
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(.white)
+                    .background(.cyan, in: RoundedRectangle(cornerRadius: 14))
+                } else {
+                    // Step 1: both choices reveal the answer; grading is added next.
+                    HStack(spacing: 12) {
+                        Button {
+                            isAnswerVisible = true
+                        } label: {
+                            Label("I remember", systemImage: "checkmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .tint(.green)
+
+                        Button {
+                            isAnswerVisible = true
+                        } label: {
+                            Label("I don't remember", systemImage: "xmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .tint(.red)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .font(.subheadline.bold())
                 }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .foregroundStyle(.white)
-                .background(.cyan, in: RoundedRectangle(cornerRadius: 14))
 
                 Text("Your answer remains private. Be honest with yourself.")
                     .font(.footnote)

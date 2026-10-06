@@ -95,9 +95,9 @@ struct VocabularyView: View {
         words.filter { $0.stage == stage }
     }
 
-    // Review the three not-yet-familiar stages, with red words first.
+    // Review red through green words, with less familiar words first; blue is excluded.
     private var reviewWords: [SavedWord] {
-        let stages: [LearningStage] = [.unfamiliar, .learning, .improving]
+        let stages: [LearningStage] = [.unfamiliar, .learning, .improving, .familiar]
         return Array(words
             .filter { stages.contains($0.stage) }
             .sorted { (stages.firstIndex(of: $0.stage) ?? stages.count) < (stages.firstIndex(of: $1.stage) ?? stages.count) }
@@ -108,7 +108,7 @@ struct VocabularyView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Review plan")
                 .font(.title2.bold())
-            Text("Practice red, orange and yellow words. The current session includes up to 20 words.")
+            Text("Practice red, orange, yellow and green words. The current session includes up to 20 words.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
