@@ -8,6 +8,17 @@ struct VideoView: View {
     @State private var playerStatus: VideoPlayerStatus = .loading
     @State private var transcript: VideoTranscript?
     @State private var transcriptError: String?
+    @State private var selectedWord: SelectedVideoWord?
+
+    private struct SelectedVideoWord: Identifiable {
+        let id = UUID()
+        let text: String
+    }
+
+    // Use the same word boundaries as the article reader.
+    private static let wordPattern = try! NSRegularExpression(
+        pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
+    )
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,6 +38,10 @@ struct VideoView: View {
                     Text("English transcript · prepared with Whisper")
                         .font(.headline)
 
+                    Text("Tap a word in the transcript to look it up and save it.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
                     if let transcript {
                         Text("\(formatTime(transcript.clipStart))–\(formatTime(transcript.clipEnd)) · \(transcript.sentences.count) sentences")
                             .font(.footnote)
@@ -38,8 +53,17 @@ struct VideoView: View {
                                 Text(formatTime(sentence.start))
                                     .font(.caption.monospacedDigit().bold())
                                     .foregroundStyle(.blue)
-                                Text(sentence.text)
+                                Text(linkedSentence(sentence.text))
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                    .environment(\.openURL, OpenURLAction { url in
+                                        guard url.scheme == "nextword", url.host == "lookup",
+                                              let word = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                                                .queryItems?.first(where: { $0.name == "word" })?.value else {
+                                            return .systemAction
+                                        }
+                                        selectedWord = SelectedVideoWord(text: word)
+                                        return .handled
+                                    })
                             }
                             .padding(.vertical, 5)
                         }
@@ -59,7 +83,40 @@ struct VideoView: View {
         }
         .navigationTitle("Video")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedWord) { selection in
+            ArticleWordSheetView(word: selection.text)
+                .presentationDetents([.medium, .large])
+        }
         .task { loadTranscript() }
+    }
+
+    // Preserve punctuation while giving each English word its own tap target.
+    private func linkedSentence(_ sentence: String) -> AttributedString {
+        var result = AttributedString()
+        var cursor = sentence.startIndex
+        let matches = Self.wordPattern.matches(
+            in: sentence,
+            range: NSRange(sentence.startIndex..<sentence.endIndex, in: sentence)
+        )
+
+        for match in matches {
+            guard let range = Range(match.range, in: sentence) else { continue }
+            result += AttributedString(String(sentence[cursor..<range.lowerBound]))
+
+            let token = String(sentence[range])
+            var linkedWord = AttributedString(token)
+            var destination = URLComponents()
+            destination.scheme = "nextword"
+            destination.host = "lookup"
+            destination.queryItems = [URLQueryItem(name: "word", value: token)]
+            linkedWord.link = destination.url
+            linkedWord.foregroundColor = .primary
+            result += linkedWord
+            cursor = range.upperBound
+        }
+
+        result += AttributedString(String(sentence[cursor...]))
+        return result
     }
 
     private func loadTranscript() {
