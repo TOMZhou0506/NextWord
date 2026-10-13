@@ -37,6 +37,12 @@ private enum ArticleError: LocalizedError {
 
 // Show the article, a loading indicator, or an error message.
 struct ArticleReaderView: View {
+    @AppStorage("readingSize") private var readingSize = "standard"
+    @AppStorage("highlightSavedWords") private var highlightSavedWords = true
+
+    private var readingFont: Font {
+        readingSize == "extraLarge" ? .title2 : readingSize == "large" ? .title3 : .body
+    }
     @Query private var savedWords: [SavedWord]
     @State private var article: Article?
     @State private var errorMessage: String?
@@ -54,6 +60,7 @@ struct ArticleReaderView: View {
 
     // Saved words drive every occurrence; mastered words stay tappable but unmarked.
     private var highlightedStages: [String: LearningStage] {
+        guard highlightSavedWords else { return [:] }
         var stages: [String: LearningStage] = [:]
         for savedWord in savedWords where savedWord.stage != .mastered {
             stages[savedWord.lookupKey.lowercased()] = savedWord.stage
@@ -79,7 +86,7 @@ struct ArticleReaderView: View {
                     // Render each paragraph in its original order.
                     ForEach(article.paragraphs.indices, id: \.self) { index in
                         Text(linkedParagraph(article.paragraphs[index]))
-                            .font(.body)
+                            .font(readingFont)
                             .lineSpacing(6)
                             .environment(\.openURL, OpenURLAction { url in
                                 guard url.scheme == "nextword", url.host == "lookup",
@@ -143,7 +150,7 @@ struct ArticleReaderView: View {
             linkedWord.foregroundColor = .primary
             if let stage = stages[token.lowercased()] {
                 linkedWord.backgroundColor = stage.colour.opacity(0.26)
-                linkedWord.font = .body.bold()
+                linkedWord.font = readingFont.bold()
             }
             result += linkedWord
             cursor = range.upperBound

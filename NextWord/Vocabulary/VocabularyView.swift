@@ -6,6 +6,7 @@ struct VocabularyView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedWord.savedAt, order: .reverse) private var words: [SavedWord]
     @AppStorage("didSeedVocabularyDemo_v1") private var didSeedDemo = false
+    @AppStorage("reviewLimit") private var reviewLimit = 20
     @State private var seedError: String?
     @State private var isReviewPresented = false
 
@@ -101,14 +102,14 @@ struct VocabularyView: View {
         return Array(words
             .filter { stages.contains($0.stage) }
             .sorted { (stages.firstIndex(of: $0.stage) ?? stages.count) < (stages.firstIndex(of: $1.stage) ?? stages.count) }
-            .prefix(20))
+            .prefix(reviewLimit))
     }
 
     private var reviewPlan: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Review plan")
                 .font(.title2.bold())
-            Text("Practice red, orange, yellow and green words. The current session includes up to 20 words.")
+            Text("Practice red, orange, yellow and green words. The current session includes up to \(reviewLimit) words.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

@@ -1,96 +1,68 @@
 import SwiftUI
+import SwiftData
 
-// The main screen holds the bottom tabs and the local Home content.
 struct ContentView: View {
-    // AppStorage keeps the name between app launches; State holds temporary edits.
-    @AppStorage("displayName") private var displayName = ""
-    @State private var draftName = ""
-    @State private var isEditingName = false
-
-    // Remove accidental spaces before saving the name.
-    private var trimmedName: String {
-        draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    @AppStorage("appearance") private var appearance = "system"
 
     var body: some View {
-        // TabView keeps the five main sections in one bottom navigation bar.
         TabView {
-            home
+            NavigationStack { HomeView() }
                 .tabItem { Label("Home", systemImage: "house") }
-
-            NavigationStack {
-                ArticleReaderView()
-            }
-            .tabItem { Label("Article", systemImage: "doc.text") }
-
-            NavigationStack {
-                VideoView()
-            }
-            .tabItem { Label("Video", systemImage: "play.rectangle") }
-
-            NavigationStack {
-                VocabularyView()
-            }
-            .tabItem { Label("Vocabulary", systemImage: "books.vertical") }
-
-            placeholder("Profile")
+            NavigationStack { ArticleReaderView() }
+                .tabItem { Label("Article", systemImage: "doc.text") }
+            NavigationStack { VideoView() }
+                .tabItem { Label("Video", systemImage: "play.rectangle") }
+            NavigationStack { VocabularyView() }
+                .tabItem { Label("Vocabulary", systemImage: "books.vertical") }
+            NavigationStack { ProfileView() }
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
+        .tint(.blue)
+        .preferredColorScheme(appearance == "system" ? nil : appearance == "dark" ? .dark : .light)
     }
+}
 
-    // Reuse the current welcome and local-name screen as Home.
-    private var home: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.blue)
+private struct HomeView: View {
+    @AppStorage("displayName") private var displayName = ""
+    @Query private var words: [SavedWord]
 
-                if displayName.isEmpty || isEditingName {
-                    Text("Welcome to NextWord")
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("A LITTLE EVERY DAY").font(.caption.weight(.semibold)).tracking(2).foregroundStyle(.blue)
+                    Text(displayName.isEmpty ? "Make every word count." : "Welcome back, \(displayName).")
                         .font(.largeTitle.bold())
-                    Text("Read English in context and collect words you want to learn.")
-                        .foregroundStyle(.secondary)
-
-                    TextField("Your name", text: $draftName)
-                        .textContentType(.nickname)
-                        .textInputAutocapitalization(.words)
-                        .textFieldStyle(.roundedBorder)
-
-                    Button("Get Started") {
-                        displayName = trimmedName
-                        isEditingName = false
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(trimmedName.isEmpty)
-                } else {
-                    Text("Hello, \(displayName)!")
-                        .font(.largeTitle.bold())
-                    Text("Start with a short English article.")
-                        .foregroundStyle(.secondary)
-
-                    // Navigate to the separate reading screen.
-                    NavigationLink("Read the article") {
-                        ArticleReaderView()
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button("Change name") {
-                        draftName = displayName
-                        isEditingName = true
-                    }
+                    Text("Discover a story. Collect new words. Keep growing.").foregroundStyle(.secondary)
                 }
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
-            .navigationTitle("NextWord")
+                NavigationLink { ArticleReaderView() } label: {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Image(systemName: "book.pages.fill").font(.largeTitle)
+                        Text("Your next chapter").font(.title.bold())
+                        Text("Explore English through real stories, one word at a time.").font(.subheadline)
+                        Label("Start reading", systemImage: "arrow.right").font(.headline)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(26)
+                    .background(LinearGradient(colors: [.blue, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 28))
+                }.buttonStyle(.plain)
+                HStack(spacing: 14) {
+                    LearningStat(value: words.count, title: "Words saved", symbol: "bookmark.fill")
+                    LearningStat(value: words.filter { $0.stage == .mastered }.count, title: "Mastered", symbol: "checkmark.seal.fill")
+                }
+                Text("Keep exploring").font(.title2.bold())
+                NavigationLink { VideoView() } label: {
+                    FeatureRow(title: "Learn by watching", subtitle: "Listen, follow along and save new words", symbol: "play.rectangle.fill", color: .purple)
+                }.buttonStyle(.plain)
+                NavigationLink { VocabularyView() } label: {
+                    FeatureRow(title: "Build your vocabulary", subtitle: "Give the words you saved another look", symbol: "rectangle.stack.fill", color: .blue)
+                }.buttonStyle(.plain)
+            }.padding(20).frame(maxWidth: 700).frame(maxWidth: .infinity)
         }
-    }
-
-    // Temporary text for sections we have not built yet.
-    private func placeholder(_ title: String) -> some View {
-        ContentUnavailableView("\(title) coming soon", systemImage: "square.dashed")
+        .background(Color(.systemGroupedBackground)).navigationTitle("NextWord")
+        .toolbar {
+            NavigationLink { SettingsView() } label: { Image(systemName: "gearshape") }
+                .accessibilityLabel("Settings")
+        }
     }
 }
