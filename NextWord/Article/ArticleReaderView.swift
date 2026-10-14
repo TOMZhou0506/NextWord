@@ -37,12 +37,8 @@ private enum ArticleError: LocalizedError {
 
 // Show the article, a loading indicator, or an error message.
 struct ArticleReaderView: View {
-    @AppStorage("readingSize") private var readingSize = "standard"
     @AppStorage("highlightSavedWords") private var highlightSavedWords = true
 
-    private var readingFont: Font {
-        readingSize == "extraLarge" ? .title2 : readingSize == "large" ? .title3 : .body
-    }
     @Query private var savedWords: [SavedWord]
     @State private var article: Article?
     @State private var errorMessage: String?
@@ -86,7 +82,7 @@ struct ArticleReaderView: View {
                     // Render each paragraph in its original order.
                     ForEach(article.paragraphs.indices, id: \.self) { index in
                         Text(linkedParagraph(article.paragraphs[index]))
-                            .font(readingFont)
+                            .font(.body)
                             .lineSpacing(6)
                             .environment(\.openURL, OpenURLAction { url in
                                 guard url.scheme == "nextword", url.host == "lookup",
@@ -150,7 +146,7 @@ struct ArticleReaderView: View {
             linkedWord.foregroundColor = .primary
             if let stage = stages[token.lowercased()] {
                 linkedWord.backgroundColor = stage.colour.opacity(0.26)
-                linkedWord.font = readingFont.bold()
+                linkedWord.font = .body.bold()
             }
             result += linkedWord
             cursor = range.upperBound

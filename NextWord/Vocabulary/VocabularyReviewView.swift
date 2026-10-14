@@ -12,6 +12,8 @@ struct VocabularyReviewView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .largeTitle) private var wordFontSize = 34.0
     @State private var currentIndex = 0
     // nil means the answer is hidden; the choice decides which buttons appear after reveal.
     @State private var rememberedBeforeReveal: Bool?
@@ -26,6 +28,7 @@ struct VocabularyReviewView: View {
     private var isFinished: Bool { currentIndex >= words.count }
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 18) {
             header
 
@@ -39,7 +42,7 @@ struct VocabularyReviewView: View {
 
                 if let rememberedBeforeReveal {
                     if rememberedBeforeReveal {
-                        HStack(spacing: 12) {
+                        answerLayout {
                             Button { finishCurrentWord(rememberedCorrectly: true) } label: {
                                 Text("I was right").frame(maxWidth: .infinity)
                             }
@@ -59,7 +62,7 @@ struct VocabularyReviewView: View {
                         .tint(.cyan)
                     }
                 } else {
-                    HStack(spacing: 12) {
+                    answerLayout {
                         Button {
                             rememberedBeforeReveal = true
                         } label: {
@@ -94,6 +97,7 @@ struct VocabularyReviewView: View {
             Spacer(minLength: 0)
         }
         .padding(20)
+        }
         .background(Color(.systemGroupedBackground))
         .onAppear { prefetchCurrentAndNextFive() }
         .onChange(of: currentIndex) { _, _ in prefetchCurrentAndNextFive() }
@@ -103,6 +107,12 @@ struct VocabularyReviewView: View {
             translations.removeAll()
             translationErrors.removeAll()
         }
+    }
+
+    private var answerLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
     }
 
     private var header: some View {
@@ -136,9 +146,8 @@ struct VocabularyReviewView: View {
                 .background(word.stage.colour.opacity(0.09), in: RoundedRectangle(cornerRadius: 20))
 
             Text(word.word)
-                .font(.system(size: 34, weight: .semibold))
-                .minimumScaleFactor(0.7)
-                .lineLimit(2)
+                .font(.system(size: wordFontSize, weight: .semibold))
+                .fixedSize(horizontal: false, vertical: true)
 
             if let pronunciation = word.pronunciation, !pronunciation.isEmpty {
                 Text(pronunciation)
@@ -169,7 +178,7 @@ struct VocabularyReviewView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxHeight: 270)
+                .frame(height: dynamicTypeSize.isAccessibilitySize ? 400 : 270)
             } else {
                 Text("Think of the meaning and an example.")
                     .foregroundStyle(.secondary)

@@ -17,6 +17,7 @@ struct ContentView: View {
             NavigationStack { ProfileView() }
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
         }
+        .modifier(AppTextSizeModifier())
         .tint(.blue)
         .preferredColorScheme(appearance == "system" ? nil : appearance == "dark" ? .dark : .light)
     }

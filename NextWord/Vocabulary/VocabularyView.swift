@@ -7,6 +7,7 @@ struct VocabularyView: View {
     @Query(sort: \SavedWord.savedAt, order: .reverse) private var words: [SavedWord]
     @AppStorage("didSeedVocabularyDemo_v1") private var didSeedDemo = false
     @AppStorage("reviewLimit") private var reviewLimit = 20
+    @ScaledMetric(relativeTo: .largeTitle) private var totalFontSize = 48.0
     @State private var seedError: String?
     @State private var isReviewPresented = false
 
@@ -49,7 +50,7 @@ struct VocabularyView: View {
             Text("Your vocabulary")
                 .font(.subheadline)
             Text("\(words.count)")
-                .font(.system(size: 48, weight: .semibold, design: .rounded))
+                .font(.system(size: totalFontSize, weight: .semibold, design: .rounded))
             Text("words collected")
                 .font(.subheadline)
         }

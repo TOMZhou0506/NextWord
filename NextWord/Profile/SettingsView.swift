@@ -9,25 +9,27 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Personalization") {
+            Section {
                 NavigationLink { EditProfileView() } label: { Label("Display name", systemImage: "person.crop.circle") }
                 Picker(selection: $appearance) {
                     Text("System").tag("system")
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 } label: { Label("Appearance", systemImage: "circle.lefthalf.filled") }
-            }
-            Section {
                 Picker(selection: $readingSize) {
                     Text("Standard").tag("standard")
                     Text("Large").tag("large")
                     Text("Extra large").tag("extraLarge")
                 } label: { Label("Text size", systemImage: "textformat.size") }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your next chapter").font(.headline)
+                    Text("Every new word opens a new door.").font(.body)
+                    Text("Text size preview").font(.caption).foregroundStyle(.secondary)
+                }.padding(.vertical, 8)
+            } header: { Text("Personalization") } footer: { Text("Text size applies throughout NextWord. Standard follows your device settings; larger options increase that size.") }
+            Section {
                 Toggle(isOn: $highlightSavedWords) { Label("Highlight saved words", systemImage: "highlighter") }
-                Text("Every new word opens a new door.")
-                    .font(readingSize == "extraLarge" ? .title2 : readingSize == "large" ? .title3 : .body)
-                    .padding(.vertical, 8)
-            } header: { Text("Reading") } footer: { Text("Text size applies to article paragraphs. Your device’s accessibility text size is also supported.") }
+            } header: { Text("Reading") } footer: { Text("Highlight words you have saved while reading.") }
             Section {
                 Picker(selection: $reviewLimit) {
                     ForEach([5, 10, 20, 30, 50], id: \.self) { Text("\($0) words").tag($0) }
