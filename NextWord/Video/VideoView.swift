@@ -21,12 +21,40 @@ struct VideoView: View {
     )
 
     var body: some View {
-        VStack(spacing: 0) {
-            YouTubePlayerView(videoID: Self.videoID, status: $playerStatus)
-                .aspectRatio(16 / 9, contentMode: .fit)
-                .background(.black)
+        GeometryReader { geometry in
+            if geometry.size.width > geometry.size.height {
+                // In landscape, keep the player and transcript visible side by side.
+                let playerWidth = min(geometry.size.width * 0.58, geometry.size.height * 16 / 9)
+                HStack(alignment: .top, spacing: 0) {
+                    player
+                        .frame(width: playerWidth, height: playerWidth * 9 / 16)
+                    transcriptList
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    player
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                    transcriptList
+                }
+            }
+        }
+        .navigationTitle("Video")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $selectedWord) { selection in
+            ArticleWordSheetView(word: selection.text)
+                .presentationDetents([.medium, .large])
+        }
+        .task { loadTranscript() }
+    }
 
-            ScrollView {
+    private var player: some View {
+        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus)
+            .background(.black)
+    }
+
+    private var transcriptList: some View {
+        ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     Text(transcript?.title ?? "League of Legends English commentary")
                         .font(.title2.bold())
@@ -79,15 +107,7 @@ struct VideoView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-            }
         }
-        .navigationTitle("Video")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selectedWord) { selection in
-            ArticleWordSheetView(word: selection.text)
-                .presentationDetents([.medium, .large])
-        }
-        .task { loadTranscript() }
     }
 
     // Preserve punctuation while giving each English word its own tap target.

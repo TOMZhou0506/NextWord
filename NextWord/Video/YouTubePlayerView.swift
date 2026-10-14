@@ -18,6 +18,7 @@ struct YouTubePlayerView: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
+        webView.scrollView.bounces = false
         webView.isOpaque = false
         webView.backgroundColor = .black
         return webView
@@ -25,24 +26,38 @@ struct YouTubePlayerView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         guard context.coordinator.loadedVideoID != videoID else { return }
-        context.coordinator.loadedVideoID = videoID
-
         var components = URLComponents(string: "https://www.youtube.com/embed/\(videoID)")!
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier?.lowercased(),
+              let origin = URL(string: "https://\(bundleIdentifier)/") else {
+            status = .failed("Could not form the player request.")
+            return
+        }
         components.queryItems = [
             URLQueryItem(name: "playsinline", value: "1"),
-            URLQueryItem(name: "rel", value: "0")
+            URLQueryItem(name: "rel", value: "0"),
+            URLQueryItem(name: "origin", value: origin.absoluteString)
         ]
-
-        guard let url = components.url,
-              let bundleIdentifier = Bundle.main.bundleIdentifier?.lowercased(),
-              let referrerURL = URL(string: "https://\(bundleIdentifier)") else {
+        guard let url = components.url else {
             status = .failed("Could not form the player request.")
             return
         }
 
-        var request = URLRequest(url: url)
-        request.setValue(referrerURL.absoluteString, forHTTPHeaderField: "Referer")
-        webView.load(request)
+        // Give the iframe a responsive viewport instead of loading the embed page directly.
+        let html = """
+        <!doctype html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+          <style>
+            html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
+            iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+          </style>
+        </head>
+        <body><iframe src="\(url.absoluteString)" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe></body>
+        </html>
+        """
+        context.coordinator.loadedVideoID = videoID
+        webView.loadHTMLString(html, baseURL: origin)
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate {
