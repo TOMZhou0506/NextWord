@@ -5,20 +5,25 @@ import WebKit
 struct YouTubePlayerView: UIViewRepresentable {
     let videoID: String
     @Binding var status: VideoPlayerStatus
+    @Binding var currentTime: Double
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(status: $status)
+        Coordinator(status: $status, currentTime: $currentTime)
     }
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.allowsInlineMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = [.audio, .video]
+        configuration.userContentController.add(context.coordinator, name: "playbackTime")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
+        // Prevent iOS safe-area insets from shifting the web content down or sideways.
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
         webView.isOpaque = false
         webView.backgroundColor = .black
         return webView
@@ -35,6 +40,7 @@ struct YouTubePlayerView: UIViewRepresentable {
         components.queryItems = [
             URLQueryItem(name: "playsinline", value: "1"),
             URLQueryItem(name: "rel", value: "0"),
+            URLQueryItem(name: "enablejsapi", value: "1"),
             URLQueryItem(name: "origin", value: origin.absoluteString)
         ]
         guard let url = components.url else {
@@ -53,19 +59,46 @@ struct YouTubePlayerView: UIViewRepresentable {
             iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
           </style>
         </head>
-        <body><iframe src="\(url.absoluteString)" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe></body>
+        <body>
+          <iframe id="player" src="\(url.absoluteString)" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="origin"></iframe>
+          <script>
+            var player;
+            function onYouTubeIframeAPIReady() {
+              player = new YT.Player('player');
+            }
+            function sendPlaybackTime() {
+              if (!player || typeof player.getCurrentTime !== 'function') return;
+              var seconds = player.getCurrentTime();
+              if (Number.isFinite(seconds)) {
+                window.webkit.messageHandlers.playbackTime.postMessage(seconds);
+              }
+            }
+            setInterval(sendPlaybackTime, 250);
+            var script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(script);
+          </script>
+        </body>
         </html>
         """
         context.coordinator.loadedVideoID = videoID
         webView.loadHTMLString(html, baseURL: origin)
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loadedVideoID: String?
         private let status: Binding<VideoPlayerStatus>
+        private let currentTime: Binding<Double>
 
-        init(status: Binding<VideoPlayerStatus>) {
+        init(status: Binding<VideoPlayerStatus>, currentTime: Binding<Double>) {
             self.status = status
+            self.currentTime = currentTime
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "playbackTime", message.frameInfo.isMainFrame,
+                  let seconds = message.body as? NSNumber else { return }
+            currentTime.wrappedValue = seconds.doubleValue
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

@@ -6,6 +6,7 @@ struct VideoView: View {
     private static let transcriptResource = "LoLHighlights-full"
 
     @State private var playerStatus: VideoPlayerStatus = .loading
+    @State private var playbackTime = 0.0
     @State private var transcript: VideoTranscript?
     @State private var transcriptError: String?
     @State private var selectedWord: SelectedVideoWord?
@@ -20,6 +21,14 @@ struct VideoView: View {
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
 
+    // Match the player's elapsed seconds to the prepared sentence timestamps.
+    private var activeSentenceIndex: Int? {
+        guard let sentences = transcript?.sentences else { return nil }
+        return sentences.indices.first {
+            sentences[$0].start <= playbackTime && playbackTime < sentences[$0].end
+        }
+    }
+
     var body: some View {
         GeometryReader { geometry in
             if geometry.size.width > geometry.size.height {
@@ -28,13 +37,15 @@ struct VideoView: View {
                 HStack(alignment: .top, spacing: 0) {
                     player
                         .frame(width: playerWidth, height: playerWidth * 9 / 16)
+                        .clipped()
                     transcriptList
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else {
                 VStack(spacing: 0) {
                     player
-                        .aspectRatio(16 / 9, contentMode: .fit)
+                        .frame(width: geometry.size.width, height: geometry.size.width * 9 / 16)
+                        .clipped()
                     transcriptList
                 }
             }
@@ -49,12 +60,13 @@ struct VideoView: View {
     }
 
     private var player: some View {
-        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus)
+        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus, currentTime: $playbackTime)
             .background(.black)
     }
 
     private var transcriptList: some View {
-        ScrollView {
+        ScrollViewReader { scrollProxy in
+            ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     Text(transcript?.title ?? "League of Legends English commentary")
                         .font(.title2.bold())
@@ -71,6 +83,9 @@ struct VideoView: View {
                         .foregroundStyle(.secondary)
 
                     if let transcript {
+                        Text("Playback: \(formatTime(playbackTime))")
+                            .font(.subheadline.monospacedDigit().bold())
+                            .foregroundStyle(.blue)
                         Text("\(formatTime(transcript.clipStart))–\(formatTime(transcript.clipEnd)) · \(transcript.sentences.count) sentences")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -94,6 +109,10 @@ struct VideoView: View {
                                     })
                             }
                             .padding(.vertical, 5)
+                            .padding(.horizontal, 8)
+                            .background(index == activeSentenceIndex ? Color.blue.opacity(0.14) : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                            .id(index)
                         }
                     } else if let transcriptError {
                         ContentUnavailableView("Transcript unavailable", systemImage: "text.badge.xmark", description: Text(transcriptError))
@@ -101,12 +120,19 @@ struct VideoView: View {
                         ProgressView("Loading prepared transcript…")
                     }
 
-                    Text("This transcript is bundled with this specific video. It is not generated on the phone or synchronized to playback yet.")
+                    Text("This transcript is bundled with this video and follows its playback time. It is not generated on the phone.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
+            }
+            .onChange(of: activeSentenceIndex) { _, index in
+                guard let index else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    scrollProxy.scrollTo(index, anchor: .center)
+                }
+            }
         }
     }
 
