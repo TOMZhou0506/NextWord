@@ -8,7 +8,7 @@ struct ContentView: View {
         TabView {
             NavigationStack { HomeView() }
                 .tabItem { Label("Home", systemImage: "house") }
-            NavigationStack { ArticleReaderView() }
+            NavigationStack { ArticleLibraryView() }
                 .tabItem { Label("Article", systemImage: "doc.text") }
             NavigationStack { VideoView() }
                 .tabItem { Label("Video", systemImage: "play.rectangle") }
@@ -36,7 +36,7 @@ private struct HomeView: View {
                         .font(.largeTitle.bold())
                     Text("Discover a story. Collect new words. Keep growing.").foregroundStyle(.secondary)
                 }
-                NavigationLink { ArticleReaderView() } label: {
+                NavigationLink { ArticleLibraryView() } label: {
                     VStack(alignment: .leading, spacing: 18) {
                         Image(systemName: "book.pages.fill").font(.largeTitle)
                         Text("Your next chapter").font(.title.bold())

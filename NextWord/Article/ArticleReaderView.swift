@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 
 // This file reads a bundled article and displays it as scrollable text.
-// The article content itself is stored in grass-grow.json.
+// Article content is stored in a JSON file chosen by the reader.
 
 // Decodable maps the JSON fields to Swift properties.
-private struct Article: Decodable {
+struct Article: Decodable {
     let id: String
     let title: String
     let author: String
@@ -15,10 +15,10 @@ private struct Article: Decodable {
     let paragraphs: [String]
 
     // Find the bundled JSON file and decode one Article from it.
-    static func loadSample() throws -> Article {
+    static func load(resourceName: String) throws -> Article {
         // Xcode can flatten synchronized resources into the bundle root.
-        guard let url = Bundle.main.url(forResource: "grass-grow", withExtension: "json", subdirectory: "Article")
-            ?? Bundle.main.url(forResource: "grass-grow", withExtension: "json") else {
+        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "json", subdirectory: "Article")
+            ?? Bundle.main.url(forResource: resourceName, withExtension: "json") else {
             throw ArticleError.missingFile
         }
         let data = try Data(contentsOf: url)
@@ -31,12 +31,18 @@ private enum ArticleError: LocalizedError {
     case missingFile
 
     var errorDescription: String? {
-        "The sample article is missing from the app bundle."
+        "The article is missing from the app bundle."
     }
 }
 
 // Show the article, a loading indicator, or an error message.
 struct ArticleReaderView: View {
+    let resourceName: String
+
+    init(resourceName: String = "grass-grow") {
+        self.resourceName = resourceName
+    }
+
     @AppStorage("highlightSavedWords") private var highlightSavedWords = true
 
     @Query private var savedWords: [SavedWord]
@@ -113,10 +119,12 @@ struct ArticleReaderView: View {
             ArticleWordSheetView(word: selection.text)
                 .presentationDetents([.medium, .large])
         }
-        // Load the bundled article when this screen appears.
-        .task {
+        // Reload if the selected article changes; existing callers still read grass-grow.
+        .task(id: resourceName) {
+            article = nil
+            errorMessage = nil
             do {
-                article = try Article.loadSample()
+                article = try Article.load(resourceName: resourceName)
             } catch {
                 errorMessage = error.localizedDescription
             }
