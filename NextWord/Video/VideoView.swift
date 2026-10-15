@@ -7,6 +7,7 @@ struct VideoView: View {
 
     @State private var playerStatus: VideoPlayerStatus = .loading
     @State private var playbackTime = 0.0
+    @State private var syncStatus = "Connecting to player clock…"
     @State private var transcript: VideoTranscript?
     @State private var transcriptError: String?
     @State private var selectedWord: SelectedVideoWord?
@@ -60,7 +61,8 @@ struct VideoView: View {
     }
 
     private var player: some View {
-        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus, currentTime: $playbackTime)
+        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus,
+                          currentTime: $playbackTime, syncStatus: $syncStatus)
             .background(.black)
     }
 
@@ -71,9 +73,11 @@ struct VideoView: View {
                     Text(transcript?.title ?? "League of Legends English commentary")
                         .font(.title2.bold())
 
-                    Text(playerStatus.message)
-                        .font(.footnote)
-                        .foregroundStyle(playerStatus.colour)
+                    if case .failed(let reason) = playerStatus {
+                        Text("Player error: \(reason)")
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
 
                     Text("English transcript · prepared with Whisper")
                         .font(.headline)
@@ -83,9 +87,6 @@ struct VideoView: View {
                         .foregroundStyle(.secondary)
 
                     if let transcript {
-                        Text("Playback: \(formatTime(playbackTime))")
-                            .font(.subheadline.monospacedDigit().bold())
-                            .foregroundStyle(.blue)
                         Text("\(formatTime(transcript.clipStart))–\(formatTime(transcript.clipEnd)) · \(transcript.sentences.count) sentences")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
