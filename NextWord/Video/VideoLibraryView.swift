@@ -14,6 +14,12 @@ struct VideoLibraryView: View {
             title: "Max Verstappen's END OF SEASON REVIEW! | Talking Bull",
             source: "Oracle Red Bull Racing",
             transcriptResource: "RedBullTalkingBull-full"
+        ),
+        VideoOption(
+            id: "t6_vawdzRok",
+            title: "Why no one guards Steph Curry this way | NBA Finals Game 4 analysis",
+            source: "Thinking Basketball",
+            transcriptResource: "ThinkingBasketballCurry-full"
         )
     ]
 
