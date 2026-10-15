@@ -2,7 +2,9 @@ import SwiftUI
 
 // Lists the bundled articles and opens the selected one in the existing reader.
 struct ArticleLibraryView: View {
-    private let resourceNames = ["grass-grow", "making-things-from-scratch"]
+    private let resourceNames = [
+        "grass-grow", "making-things-from-scratch", "sliced-bread", "friends", "studying-more-powerful"
+    ]
     @State private var items: [ArticleItem] = []
     @State private var errorMessage: String?
 
