@@ -10,7 +10,7 @@ struct ContentView: View {
                 .tabItem { Label("Home", systemImage: "house") }
             NavigationStack { ArticleLibraryView() }
                 .tabItem { Label("Article", systemImage: "doc.text") }
-            NavigationStack { VideoView() }
+            NavigationStack { VideoLibraryView() }
                 .tabItem { Label("Video", systemImage: "play.rectangle") }
             NavigationStack { VocabularyView() }
                 .tabItem { Label("Vocabulary", systemImage: "books.vertical") }
@@ -52,7 +52,7 @@ private struct HomeView: View {
                     LearningStat(value: words.filter { $0.stage == .mastered }.count, title: "Mastered", symbol: "checkmark.seal.fill")
                 }
                 Text("Keep exploring").font(.title2.bold())
-                NavigationLink { VideoView() } label: {
+                NavigationLink { VideoLibraryView() } label: {
                     FeatureRow(title: "Learn by watching", subtitle: "Listen, follow along and save new words", symbol: "play.rectangle.fill", color: .purple)
                 }.buttonStyle(.plain)
                 NavigationLink { VocabularyView() } label: {

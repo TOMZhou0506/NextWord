@@ -1,9 +1,9 @@
 import SwiftUI
 
-// Show one curated video and its pre-generated English Whisper transcript.
+// Show the selected video and its matching pre-generated Whisper transcript.
 struct VideoView: View {
-    private static let videoID = "i21NAHe77UM"
-    private static let transcriptResource = "LoLHighlights-full"
+    let videoID: String
+    let transcriptResource: String
 
     @State private var playerStatus: VideoPlayerStatus = .loading
     @State private var playbackTime = 0.0
@@ -57,11 +57,11 @@ struct VideoView: View {
             ArticleWordSheetView(word: selection.text)
                 .presentationDetents([.medium, .large])
         }
-        .task { loadTranscript() }
+        .task(id: videoID) { loadTranscript() }
     }
 
     private var player: some View {
-        YouTubePlayerView(videoID: Self.videoID, status: $playerStatus,
+        YouTubePlayerView(videoID: videoID, status: $playerStatus,
                           currentTime: $playbackTime, syncStatus: $syncStatus)
             .background(.black)
     }
@@ -70,7 +70,7 @@ struct VideoView: View {
         ScrollViewReader { scrollProxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
-                    Text(transcript?.title ?? "League of Legends English commentary")
+                    Text(transcript?.title ?? "Video transcript")
                         .font(.title2.bold())
 
                     if case .failed(let reason) = playerStatus {
@@ -167,11 +167,14 @@ struct VideoView: View {
     }
 
     private func loadTranscript() {
-        guard transcript == nil else { return }
+        transcript = nil
+        transcriptError = nil
+        playbackTime = 0
+        playerStatus = .loading
         do {
             transcript = try VideoTranscript.load(
-                resourceName: Self.transcriptResource,
-                expectedVideoID: Self.videoID
+                resourceName: transcriptResource,
+                expectedVideoID: videoID
             )
             transcriptError = nil
         } catch {
