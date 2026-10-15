@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Let the learner choose a video with its matching prepared transcript.
+// Let the learner choose a prepared video lesson.
 struct VideoLibraryView: View {
     private let videos = [
         VideoOption(
@@ -20,6 +20,12 @@ struct VideoLibraryView: View {
             title: "Why no one guards Steph Curry this way | NBA Finals Game 4 analysis",
             source: "Thinking Basketball",
             transcriptResource: "ThinkingBasketballCurry-full"
+        ),
+        VideoOption(
+            id: "v9QtM6qnG50",
+            title: "I Built A City To Save Kids From Illegal Labor",
+            source: "MrBeast",
+            transcriptResource: "MrBeastCity-full"
         )
     ]
 
