@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Lists the bundled articles and opens the selected one in the existing reader.
+// Groups bundled articles by difficulty and opens the selected one.
 struct ArticleLibraryView: View {
     private let resourceNames = [
         "grass-grow", "making-things-from-scratch", "sliced-bread", "friends", "studying-more-powerful"
@@ -20,18 +20,27 @@ struct ArticleLibraryView: View {
             if let errorMessage {
                 ContentUnavailableView("Articles unavailable", systemImage: "doc.text", description: Text(errorMessage))
             } else {
-                List(items) { item in
-                    NavigationLink {
-                        ArticleReaderView(resourceName: item.resourceName)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(item.article.title)
-                                .font(.headline)
-                            Text("\(item.article.source) · \(item.article.date)")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                List {
+                    ForEach(ArticleDifficulty.allCases, id: \.self) { difficulty in
+                        let articles = items.filter { $0.article.difficulty == difficulty }
+                        if !articles.isEmpty {
+                            Section(difficulty.label) {
+                                ForEach(articles) { item in
+                                    NavigationLink {
+                                        ArticleReaderView(resourceName: item.resourceName)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(item.article.title)
+                                                .font(.headline)
+                                            Text("\(item.article.source) · \(item.article.date)")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .padding(.vertical, 6)
+                                    }
+                                }
+                            }
                         }
-                        .padding(.vertical, 6)
                     }
                 }
             }

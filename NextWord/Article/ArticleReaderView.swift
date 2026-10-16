@@ -5,6 +5,20 @@ import SwiftData
 // Article content is stored in a JSON file chosen by the reader.
 
 // Decodable maps the JSON fields to Swift properties.
+enum ArticleDifficulty: String, Decodable, CaseIterable {
+    case beginner
+    case intermediate
+    case advanced
+
+    var label: String {
+        switch self {
+        case .beginner: "Beginner"
+        case .intermediate: "Intermediate"
+        case .advanced: "Advanced"
+        }
+    }
+}
+
 struct Article: Decodable {
     let id: String
     let title: String
@@ -12,6 +26,7 @@ struct Article: Decodable {
     let source: String
     let sourceURL: URL
     let date: String
+    let difficulty: ArticleDifficulty
     let paragraphs: [String]
 
     // Find the bundled JSON file and decode one Article from it.

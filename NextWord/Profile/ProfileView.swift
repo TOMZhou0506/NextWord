@@ -59,6 +59,9 @@ struct ProfileView: View {
                     LearningStat(value: words.filter { $0.stage == .mastered }.count, title: "Mastered", symbol: "checkmark.seal.fill")
                 }
                 VStack(spacing: 12) {
+                    NavigationLink { LearningInsightsView() } label: {
+                        FeatureRow(title: "Learning insights", subtitle: "See your vocabulary progress", symbol: "chart.xyaxis.line", color: .indigo)
+                    }
                     NavigationLink { EditProfileView() } label: {
                         FeatureRow(title: "Edit profile", subtitle: "Make NextWord feel like you", symbol: "person.text.rectangle", color: .blue)
                     }
