@@ -38,6 +38,7 @@ struct FeatureRow: View {
 
 struct ProfileView: View {
     @AppStorage("displayName") private var displayName = ""
+    @AppStorage("learningQuestionnaireCompleted_v1") private var hasLearningPreferences = false
     @Query private var words: [SavedWord]
     @State private var showAuthentication = false
     var body: some View {
@@ -59,6 +60,9 @@ struct ProfileView: View {
                     LearningStat(value: words.filter { $0.stage == .mastered }.count, title: "Mastered", symbol: "checkmark.seal.fill")
                 }
                 VStack(spacing: 12) {
+                    NavigationLink { LearningPreferencesIntroView() } label: {
+                        FeatureRow(title: "Learning preferences", subtitle: hasLearningPreferences ? "Update your learning profile" : "Set up your English learning profile", symbol: "slider.horizontal.3", color: .blue)
+                    }
                     NavigationLink { LearningInsightsView() } label: {
                         FeatureRow(title: "Learning insights", subtitle: "See your vocabulary progress", symbol: "chart.xyaxis.line", color: .indigo)
                     }
