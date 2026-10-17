@@ -14,6 +14,12 @@ struct StudyReminderSection: View {
 
     var body: some View {
         Section {
+            HStack(spacing: 14) {
+                BirdMascot(pose: .alarm, size: 64)
+                Text("I'll remind you to study at the same time every day.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
             Toggle(isOn: Binding(get: { reminderEnabled }, set: { isOn in Task { await setReminder(isOn) } })) {
                 Label("Daily reminder", systemImage: "bell")
             }
@@ -32,8 +38,6 @@ struct StudyReminderSection: View {
             }
         } header: {
             Text("Study reminders")
-        } footer: {
-            Text("NextWord reminds you to study at this time every day.")
         }
         .task { await notificationManager.refresh() }
         // The user may come back from iOS Settings with a different permission.

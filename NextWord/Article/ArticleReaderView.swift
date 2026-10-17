@@ -122,7 +122,7 @@ struct ArticleReaderView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
             } else if let errorMessage {
-                ContentUnavailableView("Article unavailable", systemImage: "doc.text", description: Text(errorMessage))
+                BirdMessage(pose: .reading, title: "Article unavailable", message: errorMessage)
             } else {
                 ProgressView("Loading article…")
                     .padding()

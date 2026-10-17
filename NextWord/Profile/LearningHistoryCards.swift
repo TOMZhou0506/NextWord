@@ -98,6 +98,8 @@ struct InsightTile: View {
     let title: String
     let symbol: String
     let colour: Color
+    // An optional bird in the top corner, e.g. the flame bird for an active streak.
+    var bird: BirdMascot.Pose? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -107,6 +109,10 @@ struct InsightTile: View {
         }
         // Fill the row height so tiles with one- and two-line titles line up.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // An overlay doesn't change the tile's size, so the two tiles in a row still match.
+        .overlay(alignment: .topTrailing) {
+            if let bird { BirdMascot(pose: bird, size: 56) }
+        }
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
         .accessibilityElement(children: .combine)
@@ -248,8 +254,8 @@ struct AccuracyTrendCard: View {
                 .foregroundStyle(.secondary)
 
             if points.isEmpty {
-                ContentUnavailableView("No reviews yet", systemImage: "checkmark.circle", description: Text("Finish a review to start this chart."))
-                    .frame(height: 200)
+                BirdMessage(pose: .sleeping, title: "No reviews yet", message: "Finish a review to start this chart.", birdSize: 90)
+                    .frame(minHeight: 200)
             } else {
                 Chart(points) { point in
                     LineMark(x: .value("Date", point.date, unit: .day), y: .value("Accuracy", point.percent))
@@ -295,8 +301,8 @@ struct StageMovesCard: View {
                 .foregroundStyle(.secondary)
 
             if moves.isEmpty {
-                ContentUnavailableView("No colour changes yet", systemImage: "arrow.up.arrow.down", description: Text("Review or recolour a word to start this chart."))
-                    .frame(height: 200)
+                BirdMessage(pose: .sleeping, title: "No colour changes yet", message: "Review or recolour a word to start this chart.", birdSize: 90)
+                    .frame(minHeight: 200)
             } else {
                 HStack(spacing: 16) {
                     Label("\(totalUp) up", systemImage: "arrow.up").foregroundStyle(.green)

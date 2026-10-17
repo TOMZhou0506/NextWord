@@ -35,11 +35,10 @@ struct AuthenticationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 12) {
-                        // The blue bird from the app icon, so the first screen matches the Home Screen icon.
-                        Image("NextWordBird").resizable().scaledToFit()
-                            .frame(width: 88, height: 88)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .accessibilityHidden(true)
+                        // The bird waves hello on the very first screen.
+                        BirdMascot(pose: .wave, size: 150)
+                            // Full width so the bird sits in the centre while the text stays left-aligned.
+                            .frame(maxWidth: .infinity)
                         Text(mode == .signIn ? "Your next word awaits." : mode == .register ? "Start your next chapter." : "Let’s get you back in.")
                             .font(.largeTitle.bold())
                         Text(mode == .reset ? "Enter your email to request a password reset." : "A home for every word you discover.")

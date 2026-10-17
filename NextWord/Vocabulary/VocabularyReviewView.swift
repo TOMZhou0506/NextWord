@@ -24,6 +24,10 @@ struct VocabularyReviewView: View {
     @State private var dictionaryMessage = ""
     @State private var isDictionaryLoading = false
     @State private var saveError: String?
+    // Words that reached blue in this session, listed on the completion card.
+    @State private var masteredWords: [String] = []
+    // The word being celebrated right now; the bird shows briefly, then hides.
+    @State private var celebratingWord: String?
 
     private var isFinished: Bool { currentIndex >= words.count }
 
@@ -99,6 +103,21 @@ struct VocabularyReviewView: View {
         .padding(20)
         }
         .background(Color(.systemGroupedBackground))
+        // A short celebration on top of the next card; taps still reach the card underneath.
+        .overlay {
+            // Skipped on the last card: the completion card already celebrates.
+            if let celebratingWord, !isFinished {
+                VStack(spacing: 8) {
+                    BirdMascot(pose: .celebrate, size: 120, popsIn: true)
+                    Text("“\(celebratingWord)” mastered!")
+                        .font(.headline)
+                }
+                .padding(24)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+                .allowsHitTesting(false)
+                .accessibilityElement(children: .combine)
+            }
+        }
         .onAppear { prefetchCurrentAndNextFive() }
         .onChange(of: currentIndex) { _, _ in prefetchCurrentAndNextFive() }
         .task(id: currentIndex) { await loadCurrentDictionaryEntry() }
@@ -196,6 +215,17 @@ struct VocabularyReviewView: View {
     }
 
     // Save only when the user finishes the card; closing early leaves it unchanged.
+    // Show the celebrating bird for a moment when a word moves from green to blue.
+    private func celebrate(_ word: String) {
+        masteredWords.append(word)
+        celebratingWord = word
+        Task {
+            try? await Task.sleep(for: .seconds(1.6))
+            // Only hide it if a newer celebration hasn't replaced it.
+            if celebratingWord == word { celebratingWord = nil }
+        }
+    }
+
     private func finishCurrentWord(rememberedCorrectly: Bool) {
         guard !isFinished, rememberedBeforeReveal != nil else { return }
         let word = words[currentIndex]
@@ -223,6 +253,9 @@ struct VocabularyReviewView: View {
             saveError = nil
             currentIndex += 1
             rememberedBeforeReveal = nil
+            if word.stage == .mastered && oldStage != .mastered {
+                celebrate(word.word)
+            }
         } catch {
             modelContext.rollback()
             saveError = error.localizedDescription
@@ -332,14 +365,18 @@ struct VocabularyReviewView: View {
 
     private var completionCard: some View {
         VStack(spacing: 16) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.green)
+            BirdMascot(pose: .celebrate, size: 140, popsIn: true)
             Text("Review complete")
                 .font(.title2.bold())
             Text("You reviewed \(words.count) words. Their learning stages have been saved.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
+            if !masteredWords.isEmpty {
+                Text("Mastered today: \(masteredWords.joined(separator: ", "))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.blue)
+                    .multilineTextAlignment(.center)
+            }
             Button("Done") { dismiss() }
                 .buttonStyle(.borderedProminent)
         }

@@ -85,7 +85,9 @@ struct LearningInsightsView: View {
         let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
 
         return LazyVGrid(columns: columns, spacing: 14) {
-            InsightTile(value: history.currentStreak.formatted(), title: "Day streak", symbol: "flame.fill", colour: .orange)
+            // The flame bird only appears once there is a streak to be proud of.
+            InsightTile(value: history.currentStreak.formatted(), title: "Day streak", symbol: "flame.fill", colour: .orange,
+                        bird: history.currentStreak > 0 ? .flame : nil)
             InsightTile(value: history.studyDays(inMonthOf: Date()).formatted(), title: "Learning days this month", symbol: "calendar", colour: .blue)
             InsightTile(value: recentReviews.count.formatted(), title: "Words reviewed · \(selectedDays) days", symbol: "arrow.triangle.2.circlepath", colour: .cyan)
             InsightTile(value: accuracy, title: "Accuracy · \(selectedDays) days", symbol: "checkmark.seal.fill", colour: .green)
@@ -100,8 +102,8 @@ struct LearningInsightsView: View {
                 .monospacedDigit()
 
             if words.isEmpty {
-                ContentUnavailableView("No words saved yet", systemImage: "text.book.closed", description: Text("Save a word to start your chart."))
-                    .frame(height: 220)
+                BirdMessage(pose: .sleeping, title: "No words saved yet", message: "Save a word to start your chart.", birdSize: 90)
+                    .frame(minHeight: 220)
             } else {
                 Chart(dailyTotals) { day in
                     LineMark(

@@ -7,12 +7,7 @@ struct BirdPrompt: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Image("NextWordBird")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 76, height: 76)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .accessibilityHidden(true)
+            BirdMascot(pose: .wave, size: 88)
 
             HStack(spacing: 0) {
                 // Small triangle pointing at the bird.

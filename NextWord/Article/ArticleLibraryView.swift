@@ -42,7 +42,7 @@ struct ArticleLibraryView: View {
     var body: some View {
         Group {
             if let errorMessage {
-                ContentUnavailableView("Articles unavailable", systemImage: "doc.text", description: Text(errorMessage))
+                BirdMessage(pose: .reading, title: "Articles unavailable", message: errorMessage)
             } else {
                 List {
                     Picker("Difficulty", selection: $difficultyFilter) {

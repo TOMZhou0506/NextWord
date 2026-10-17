@@ -116,7 +116,7 @@ struct VideoView: View {
                             .id(index)
                         }
                     } else if let transcriptError {
-                        ContentUnavailableView("Transcript unavailable", systemImage: "text.badge.xmark", description: Text(transcriptError))
+                        BirdMessage(pose: .headphones, title: "Transcript unavailable", message: transcriptError)
                     } else {
                         ProgressView("Loading prepared transcript…")
                     }

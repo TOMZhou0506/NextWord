@@ -104,6 +104,18 @@ struct VocabularyView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            // Nothing to review: the bird takes a nap until new words arrive.
+            if reviewWords.isEmpty {
+                BirdMessage(
+                    pose: .sleeping,
+                    title: "Nothing to review right now",
+                    message: words.isEmpty
+                        ? "Save words from articles and videos to start reviewing."
+                        : "All your words are blue. Save new words to keep learning.",
+                    birdSize: 90
+                )
+            }
+
             Button {
                 isReviewPresented = true
             } label: {

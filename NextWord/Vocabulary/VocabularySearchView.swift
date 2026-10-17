@@ -34,8 +34,15 @@ struct VocabularySearchView: View {
 
             if isSearching {
                 ProgressView("Searching the local dictionary…")
+            } else if let message, entry == nil {
+                // The search found nothing (or the dictionary couldn't be read): the bird is puzzled too.
+                Section { BirdMessage(pose: .thinking, title: "Hmm, no luck", message: message, birdSize: 90) }
             } else if let message {
+                // Notes about saving, e.g. "Word added to Vocabulary."
                 Section { Text(message).foregroundStyle(.secondary) }
+            } else if entry == nil {
+                // Before the first search, invite the learner to look something up.
+                Section { BirdMessage(pose: .magnifier, title: "Look up any English word", message: "Definitions come from the offline Wordset dictionary.", birdSize: 90) }
             }
 
             if let entry {

@@ -225,6 +225,10 @@ struct LearningPreferencesIntroView: View {
     private var colourDemoPage: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(spacing: 14) {
+                // The bird celebrates when the word reaches blue.
+                if demoStage == .mastered {
+                    BirdMascot(pose: .celebrate, size: 100, popsIn: true)
+                }
                 Text("overwhelmed")
                     .font(.title.bold())
                     .foregroundStyle(.white)
