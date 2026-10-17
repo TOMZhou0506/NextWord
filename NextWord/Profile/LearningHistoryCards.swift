@@ -143,17 +143,19 @@ struct LearningCalendarCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Learning calendar").font(.title3.bold())
-                Spacer()
-                Button { changeMonth(by: -1) } label: { Image(systemName: "chevron.left") }
-                    .accessibilityLabel("Previous month")
-                Text(month, format: .dateTime.month(.abbreviated).year())
-                    .font(.subheadline.weight(.semibold))
-                Button { changeMonth(by: 1) } label: { Image(systemName: "chevron.right") }
-                    .disabled(isCurrentMonth)
-                    .accessibilityLabel("Next month")
+            // Title and month switcher share a row when they fit; the switcher drops below at large text sizes.
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Text("Learning calendar").font(.title3.bold())
+                    Spacer()
+                    monthSwitcher
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Learning calendar").font(.title3.bold())
+                    monthSwitcher
+                }
             }
+            .lineLimit(1)
 
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
@@ -184,6 +186,18 @@ struct LearningCalendarCard: View {
                 .foregroundStyle(.secondary)
         }
         .insightsCard()
+    }
+
+    private var monthSwitcher: some View {
+        HStack {
+            Button { changeMonth(by: -1) } label: { Image(systemName: "chevron.left") }
+                .accessibilityLabel("Previous month")
+            Text(month, format: .dateTime.month(.abbreviated).year())
+                .font(.subheadline.weight(.semibold))
+            Button { changeMonth(by: 1) } label: { Image(systemName: "chevron.right") }
+                .disabled(isCurrentMonth)
+                .accessibilityLabel("Next month")
+        }
     }
 
     private func dayCell(_ day: Date) -> some View {

@@ -109,10 +109,14 @@ struct VocabularyReviewView: View {
         }
     }
 
-    private var answerLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 12))
-            : AnyLayout(HStackLayout(spacing: 12))
+    // Side by side when every label fits on one line; stacked otherwise.
+    // lineLimit(1) stops labels wrapping, so ViewThatFits can tell when the row is too narrow.
+    private func answerLayout<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) { content() }
+            VStack(spacing: 12) { content() }
+        }
+        .lineLimit(1)
     }
 
     private var header: some View {

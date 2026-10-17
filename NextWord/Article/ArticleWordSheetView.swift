@@ -125,34 +125,14 @@ struct ArticleWordSheetView: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 8) {
-                ForEach(availableStages, id: \.self) { stage in
-                    Button {
-                        selectedStage = stage
-                        saveMessage = nil
-                    } label: {
-                        VStack(spacing: 5) {
-                            Circle()
-                                .fill(stage.colour)
-                                .frame(width: 18, height: 18)
-                            Text(stageName(stage))
-                                .font(.caption)
-                                .foregroundStyle(.primary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(stage.colour.opacity(selectedStage == stage ? 0.15 : 0.04),
-                                    in: RoundedRectangle(cornerRadius: 10))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(selectedStage == stage ? stage.colour : .clear, lineWidth: 2)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(stage.label)
-                    .accessibilityAddTraits(selectedStage == stage ? .isSelected : [])
+            // Four in a row when the names fit on one line; a 2 × 2 grid at very large text sizes.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { stageButtons }
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    stageButtons
                 }
             }
+            .lineLimit(1)
 
             Button {
                 saveWord()
@@ -174,6 +154,36 @@ struct ArticleWordSheetView: View {
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
         .background(.regularMaterial)
+    }
+
+    // The four colour buttons, used by both the row and the grid layout above.
+    @ViewBuilder private var stageButtons: some View {
+        ForEach(availableStages, id: \.self) { stage in
+            Button {
+                selectedStage = stage
+                saveMessage = nil
+            } label: {
+                VStack(spacing: 5) {
+                    Circle()
+                        .fill(stage.colour)
+                        .frame(width: 18, height: 18)
+                    Text(stageName(stage))
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(stage.colour.opacity(selectedStage == stage ? 0.15 : 0.04),
+                            in: RoundedRectangle(cornerRadius: 10))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(selectedStage == stage ? stage.colour : .clear, lineWidth: 2)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(stage.label)
+            .accessibilityAddTraits(selectedStage == stage ? .isSelected : [])
+        }
     }
 
     private func stageName(_ stage: LearningStage) -> String {
