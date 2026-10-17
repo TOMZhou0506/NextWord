@@ -1,29 +1,32 @@
 import FirebaseAuth
 import SwiftUI
 
-// Ask eight questions and save answers only after the final step.
-// Answers go to this account's settings and are copied to Firestore.
+// A seven-page learning survey. Answers are saved only on the last page,
+// to this account's settings, and copied to Firestore.
 struct LearningPreferencesIntroView: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("heardFrom_v1") private var savedHeardFrom = ""
+    @AppStorage("englishLevel_v2") private var savedLevel = 0
+    @AppStorage("englishLevel_v1") private var oldLevel = ""
     @AppStorage("learningGoals_v1") private var savedGoals = ""
-    @AppStorage("englishLevel_v1") private var savedLevel = ""
-    @AppStorage("dailyLearningTime_v1") private var savedDailyTime = ""
-    @AppStorage("preferredLearningFormat_v1") private var savedFormat = ""
-    @AppStorage("preferredStudyTime_v1") private var savedStudyTime = ""
     @AppStorage("videoInterests_v1") private var savedInterests = ""
+    @AppStorage("dailyMinutes_v1") private var savedMinutes = 15
     @AppStorage("reviewLimit") private var reviewLimit = 20
+    @AppStorage("preferredStudyTime_v1") private var savedStudyTime = ""
     @AppStorage("learningQuestionnaireCompleted_v1") private var isCompleted = false
 
+    private let pageCount = 7
     @State private var step = 0
+    @State private var heardFrom = ""
+    @State private var level = 0
     @State private var goals: Set<String> = []
-    @State private var level = ""
-    @State private var dailyTime = ""
-    @State private var format = ""
-    @State private var studyTime = ""
     @State private var interests: Set<String> = []
-    @State private var sessionSize = 20
-    @State private var practiceStage: LearningStage?
+    @State private var minutes = 15
+    @State private var reviewWords = 20
+    @State private var studyTime = ""
+    @State private var demoStage = LearningStage.unfamiliar
+    @State private var hasTriedDemo = false
     @State private var hasLoaded = false
 
     private struct Choice: Identifiable {
@@ -33,36 +36,33 @@ struct LearningPreferencesIntroView: View {
         var detail: String? = nil
     }
 
-    private let goalChoices = [
-        Choice(id: "vocabulary", title: "Build vocabulary", symbol: "text.book.closed"),
-        Choice(id: "articles", title: "Read articles", symbol: "doc.text"),
-        Choice(id: "videos", title: "Understand videos", symbol: "play.rectangle"),
-        Choice(id: "study", title: "Study or exams", symbol: "graduationcap"),
-        Choice(id: "work", title: "Work", symbol: "briefcase"),
-        Choice(id: "interest", title: "Personal interest", symbol: "heart")
+    private let sourceChoices = [
+        Choice(id: "friends", title: "Friends or family", symbol: "person.2"),
+        Choice(id: "appstore", title: "App Store", symbol: "apple.logo"),
+        Choice(id: "xiaohongshu", title: "Xiaohongshu (RED)", symbol: "book.closed"),
+        Choice(id: "bilibili", title: "Bilibili", symbol: "play.tv"),
+        Choice(id: "tiktok", title: "TikTok or Douyin", symbol: "music.note"),
+        Choice(id: "instagram", title: "Instagram or Facebook", symbol: "camera"),
+        Choice(id: "search", title: "Search engine", symbol: "magnifyingglass"),
+        Choice(id: "school", title: "School or teacher", symbol: "graduationcap"),
+        Choice(id: "other", title: "Other", symbol: "ellipsis.circle")
     ]
+    // Five self-rated levels; RecommendationRules turns them into three content difficulties.
     private let levelChoices = [
-        Choice(id: "beginner", title: "Beginner", symbol: "1.circle", detail: "I understand common words and short sentences."),
-        Choice(id: "intermediate", title: "Intermediate", symbol: "2.circle", detail: "I understand everyday content with some help."),
-        Choice(id: "advanced", title: "Advanced", symbol: "3.circle", detail: "I understand most content but still meet unfamiliar words.")
+        (1, "I'm new to English"),
+        (2, "I know some common words"),
+        (3, "I can have basic conversations"),
+        (4, "I can talk about various topics"),
+        (5, "I can discuss most topics in detail")
     ]
-    private let durationChoices = [
-        Choice(id: "5", title: "About 5 minutes", symbol: "clock"),
-        Choice(id: "10", title: "About 10 minutes", symbol: "clock"),
-        Choice(id: "20", title: "About 20 minutes", symbol: "clock"),
-        Choice(id: "more", title: "More than 20 minutes", symbol: "clock"),
-        Choice(id: "varies", title: "It depends on the day", symbol: "calendar")
-    ]
-    private let formatChoices = [
-        Choice(id: "articles", title: "Reading articles", symbol: "doc.text"),
-        Choice(id: "videos", title: "Watching videos", symbol: "play.rectangle"),
-        Choice(id: "both", title: "A mix of both", symbol: "square.stack")
-    ]
-    private let studyTimeChoices = [
-        Choice(id: "morning", title: "Morning", symbol: "sunrise"),
-        Choice(id: "afternoon", title: "Afternoon", symbol: "sun.max"),
-        Choice(id: "evening", title: "Evening", symbol: "moon.stars"),
-        Choice(id: "varies", title: "No regular time", symbol: "calendar")
+    private let goalChoices = [
+        Choice(id: "travel", title: "Prepare for travel", symbol: "airplane"),
+        Choice(id: "people", title: "Connect with people", symbol: "person.2.wave.2"),
+        Choice(id: "education", title: "Support my education", symbol: "graduationcap"),
+        Choice(id: "career", title: "Boost my career", symbol: "briefcase"),
+        Choice(id: "media", title: "Enjoy videos and games", symbol: "play.rectangle"),
+        Choice(id: "productive", title: "Spend time productively", symbol: "brain.head.profile"),
+        Choice(id: "fun", title: "Just for fun", symbol: "party.popper")
     ]
     private let interestChoices = [
         Choice(id: "gaming", title: "Gaming", symbol: "gamecontroller"),
@@ -71,19 +71,22 @@ struct LearningPreferencesIntroView: View {
         Choice(id: "lifestyle", title: "Lifestyle", symbol: "person.2"),
         Choice(id: "none", title: "No preference", symbol: "sparkles")
     ]
+    private let studyTimeChoices = [
+        Choice(id: "morning", title: "Morning", symbol: "sunrise"),
+        Choice(id: "afternoon", title: "Afternoon", symbol: "sun.max"),
+        Choice(id: "evening", title: "Evening", symbol: "moon.stars"),
+        Choice(id: "varies", title: "No regular time", symbol: "calendar")
+    ]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Question \(step + 1) of 8")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    ProgressView(value: Double(step + 1), total: 8).tint(.blue)
-                    Text(questionTitle).font(.largeTitle.bold())
-                    Text(questionDetail).font(.subheadline).foregroundStyle(.secondary)
+                ProgressView(value: Double(step + 1), total: Double(pageCount)).tint(.blue)
+                BirdPrompt(text: question)
+                if let hint {
+                    Text(hint).font(.subheadline).foregroundStyle(.secondary)
                 }
-                questionContent
+                pageContent
             }
             .padding(24)
             .frame(maxWidth: 620, alignment: .leading)
@@ -93,10 +96,10 @@ struct LearningPreferencesIntroView: View {
         .background(Color(.systemGroupedBackground))
         .safeAreaInset(edge: .bottom) {
             Button {
-                if step == 7 { savePreferences() }
+                if step == pageCount - 1 { savePreferences() }
                 else { step += 1 }
             } label: {
-                Text(step == 7 ? "Save preferences" : "Continue")
+                Text(step == pageCount - 1 ? "Start learning" : "Continue")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -118,7 +121,7 @@ struct LearningPreferencesIntroView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                 }
-                .accessibilityLabel(step == 0 ? "Back to Profile" : "Previous question")
+                .accessibilityLabel(step == 0 ? "Close survey" : "Previous question")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Later") { dismiss() }
@@ -127,72 +130,162 @@ struct LearningPreferencesIntroView: View {
         .onAppear(perform: loadSavedPreferences)
     }
 
-    private var questionTitle: String {
+    private var question: String {
         switch step {
-        case 0: "What are your English learning goals?"
-        case 1: "What is your current English level?"
-        case 2: "How long would you like to learn each day?"
-        case 3: "How do you prefer to learn English?"
-        case 4: "When do you usually like to study?"
-        case 5: "Which video topics interest you?"
-        case 6: "How many words in a review session?"
-        default: "How familiar are you with this word?"
+        case 0: "Where did you hear about NextWord?"
+        case 1: "How much English do you know?"
+        case 2: "Why are you learning English?"
+        case 3: "Which video topics interest you?"
+        case 4: "What's your daily goal?"
+        case 5: "When do you usually like to study?"
+        default: "Meet the five colours!"
         }
     }
 
-    private var questionDetail: String {
+    private var hint: String? {
         switch step {
-        case 0, 5: "Select all that apply."
-        case 1: "This is your own estimate, not a test result. You can change it later."
-        case 2: "Choose a comfortable amount of time, not a target you must meet."
-        case 3: "You can always access both articles and videos."
-        case 4: "This will not set a reminder or send notifications."
-        case 6: "This updates the session size in Settings."
-        default: "Try the five-colour system. Your answer will not be saved as a vocabulary word."
+        case 1: "This is your own estimate. You can change it later in Settings."
+        case 2, 3: "Select all that apply."
+        case 4: "You can change both of these later in Settings."
+        case 5: "We'll use this for your study reminders."
+        case 6: "Every saved word has a colour. Keep remembering until the word turns blue."
+        default: nil
         }
     }
 
-    @ViewBuilder private var questionContent: some View {
+    @ViewBuilder private var pageContent: some View {
         switch step {
-        case 0: choices(goalChoices, selected: goals) { toggleGoal($0) }
-        case 1: choices(levelChoices, selected: [level]) { level = $0 }
-        case 2: choices(durationChoices, selected: [dailyTime]) { dailyTime = $0 }
-        case 3: choices(formatChoices, selected: [format]) { format = $0 }
-        case 4: choices(studyTimeChoices, selected: [studyTime]) { studyTime = $0 }
-        case 5: choices(interestChoices, selected: interests) { toggleInterest($0) }
-        case 6:
-            choices([10, 20, 30].map { Choice(id: String($0), title: "\($0) words", symbol: "rectangle.stack") },
-                    selected: [String(sessionSize)]) { sessionSize = Int($0) ?? 20 }
-        default: colourPractice
+        case 0: choices(sourceChoices, selected: [heardFrom]) { heardFrom = $0 }
+        case 1: levelPage
+        case 2: choices(goalChoices, selected: goals) { toggle($0, in: &goals) }
+        case 3: choices(interestChoices, selected: interests) { toggleInterest($0) }
+        case 4: dailyGoalPage
+        case 5: choices(studyTimeChoices, selected: [studyTime]) { studyTime = $0 }
+        default: colourDemoPage
         }
     }
 
-    private var colourPractice: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("overwhelmed")
-                .font(.title.bold())
-                .frame(maxWidth: .infinity)
-                .padding(24)
-                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-            ForEach(LearningStage.allCases, id: \.self) { stage in
-                Button { practiceStage = stage } label: {
-                    HStack(spacing: 12) {
-                        Circle().fill(stage.colour).frame(width: 18, height: 18)
-                        Text(stage.label).foregroundStyle(.primary)
-                        Spacer()
-                        if practiceStage == stage { Image(systemName: "checkmark").foregroundStyle(.blue) }
+    // Signal bars fill up with each level, like a phone signal.
+    private var levelPage: some View {
+        VStack(spacing: 12) {
+            ForEach(levelChoices, id: \.0) { value, title in
+                Button { level = value } label: {
+                    HStack(spacing: 16) {
+                        Image(systemName: "cellularbars", variableValue: Double(value - 1) / 4)
+                            .font(.title3).frame(width: 30).foregroundStyle(.blue)
+                        Text(title).font(.headline).foregroundStyle(.primary).multilineTextAlignment(.leading)
+                        Spacer(minLength: 0)
                     }
-                    .padding(18)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(practiceStage == stage ? .blue : .clear, lineWidth: 2))
+                    .choiceCard(isSelected: level == value)
                 }
                 .buttonStyle(.plain)
             }
-            if practiceStage != nil {
-                Text("There is no wrong answer. Choose the colour that honestly describes your familiarity. During review, a word can move up or down as you learn.")
-                    .font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+
+    private var dailyGoalPage: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("\(minutes) min / day").font(.headline).monospacedDigit()
+                    Spacer()
+                    Text(effortLabel).foregroundStyle(.secondary)
+                }
+                Slider(value: intBinding($minutes), in: 10...60, step: 5)
+                Text("Time spent reading, watching and reviewing.").font(.caption).foregroundStyle(.secondary)
+            }
+            .choiceCard(isSelected: false)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("\(reviewWords) words per review").font(.headline).monospacedDigit()
+                Slider(value: intBinding($reviewWords), in: 10...100, step: 5)
+                Text("The most words one review session will include.").font(.caption).foregroundStyle(.secondary)
+            }
+            .choiceCard(isSelected: false)
+        }
+    }
+
+    private var effortLabel: String {
+        switch minutes {
+        case ..<15: "Casual"
+        case ..<30: "Regular"
+        case ..<45: "Serious"
+        default: "Intense"
+        }
+    }
+
+    // A small review practice: the word moves up when remembered and down when forgotten.
+    private var colourDemoPage: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 14) {
+                Text("overwhelmed")
+                    .font(.title.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(demoStage.colour, in: Capsule())
+                Text(demoMessage)
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .frame(minHeight: 40)
+                // Side by side when they fit; stacked when the text size is very large.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { demoButtons }
+                    VStack(spacing: 10) { demoButtons }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .choiceCard(isSelected: false)
+
+            ForEach(LearningStage.allCases, id: \.self) { stage in
+                HStack(spacing: 12) {
+                    Circle().fill(stage.colour).frame(width: 16, height: 16)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(stage.label).font(.subheadline.weight(.semibold))
+                        Text(stage.demoMeaning).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                    if stage == demoStage {
+                        Image(systemName: "arrow.left").foregroundStyle(stage.colour)
+                    }
+                }
             }
         }
+        .animation(.spring(duration: 0.35), value: demoStage)
+    }
+
+    // Short labels kept on one line, so the two buttons stay the same shape.
+    @ViewBuilder private var demoButtons: some View {
+        Button { moveDemo(by: -1) } label: {
+            Label("Forgot", systemImage: "arrow.down")
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+        }
+        .tint(.red)
+        .disabled(demoStage == .unfamiliar)
+        Button { moveDemo(by: 1) } label: {
+            Label("Remembered", systemImage: "arrow.up")
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+        }
+        .tint(.green)
+        .disabled(demoStage == .mastered)
+    }
+
+    private var demoMessage: String {
+        if !hasTriedDemo { return "Pretend this is a review. Did you remember the word?" }
+        return demoStage == .mastered
+            ? "Mastered! Blue words leave your review list."
+            : "Remembered words move up a colour; forgotten words move down. Reach blue to finish."
+    }
+
+    private func moveDemo(by change: Int) {
+        let stages = LearningStage.allCases
+        guard let index = stages.firstIndex(of: demoStage) else { return }
+        demoStage = stages[min(max(index + change, 0), stages.count - 1)]
+        hasTriedDemo = true
     }
 
     private func choices(_ options: [Choice], selected: Set<String>, action: @escaping (String) -> Void) -> some View {
@@ -201,52 +294,47 @@ struct LearningPreferencesIntroView: View {
                 Button { action(option.id) } label: {
                     HStack(spacing: 16) {
                         Image(systemName: option.symbol).font(.title3).frame(width: 30).foregroundStyle(.blue)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(option.title).font(.headline).foregroundStyle(.primary)
-                            if let detail = option.detail {
-                                Text(detail).font(.subheadline).foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.leading)
-                            }
-                        }
+                        Text(option.title).font(.headline).foregroundStyle(.primary)
                         Spacer(minLength: 0)
                         if selected.contains(option.id) {
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.blue)
                         }
                     }
-                    .padding(18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(selected.contains(option.id) ? .blue : .clear, lineWidth: 2))
+                    .choiceCard(isSelected: selected.contains(option.id))
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
+    // Sliders work with Double; our settings are whole numbers.
+    private func intBinding(_ value: Binding<Int>) -> Binding<Double> {
+        Binding(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = Int($0) })
+    }
+
     private var canContinue: Bool {
         switch step {
-        case 0: !goals.isEmpty
-        case 1: !level.isEmpty
-        case 2: !dailyTime.isEmpty
-        case 3: !format.isEmpty
-        case 4: !studyTime.isEmpty
-        case 5: !interests.isEmpty
-        case 6: [10, 20, 30].contains(sessionSize)
-        default: practiceStage != nil
+        case 0: !heardFrom.isEmpty
+        case 1: level != 0
+        case 2: !goals.isEmpty
+        case 3: !interests.isEmpty
+        case 4: true
+        case 5: !studyTime.isEmpty
+        // The survey ends once the learner has walked the word all the way to blue.
+        default: demoStage == .mastered
         }
     }
 
-    private func toggleGoal(_ id: String) {
-        if goals.contains(id) { goals.remove(id) }
-        else { goals.insert(id) }
+    private func toggle(_ id: String, in set: inout Set<String>) {
+        if set.contains(id) { set.remove(id) } else { set.insert(id) }
     }
 
+    // "No preference" can't be combined with real topics.
     private func toggleInterest(_ id: String) {
         if id == "none" { interests = interests.contains("none") ? [] : ["none"] }
         else {
             interests.remove("none")
-            if interests.contains(id) { interests.remove(id) }
-            else { interests.insert(id) }
+            toggle(id, in: &interests)
         }
     }
 
@@ -254,28 +342,54 @@ struct LearningPreferencesIntroView: View {
     private func loadSavedPreferences() {
         guard !hasLoaded else { return }
         hasLoaded = true
-        goals = Set(savedGoals.split(separator: ",").map(String.init))
+        heardFrom = savedHeardFrom
         level = savedLevel
-        dailyTime = savedDailyTime
-        format = savedFormat
-        studyTime = savedStudyTime
+        // Answers from the old three-level survey become the closest new level.
+        if level == 0 {
+            level = ["beginner": 1, "intermediate": 3, "advanced": 5][oldLevel] ?? 0
+        }
+        goals = Set(savedGoals.split(separator: ",").map(String.init))
         interests = Set(savedInterests.split(separator: ",").map(String.init))
-        sessionSize = reviewLimit
+        minutes = min(max(savedMinutes, 10), 60)
+        reviewWords = min(max(reviewLimit, 10), 100)
+        studyTime = savedStudyTime
     }
 
-    // Later leaves saved answers unchanged; the practice word is never inserted.
+    // "Later" leaves saved answers unchanged; nothing is written until this point.
     private func savePreferences() {
-        savedGoals = goals.sorted().joined(separator: ",")
+        savedHeardFrom = heardFrom
         savedLevel = level
-        savedDailyTime = dailyTime
-        savedFormat = format
-        savedStudyTime = studyTime
+        savedGoals = goals.sorted().joined(separator: ",")
         savedInterests = interests.sorted().joined(separator: ",")
-        reviewLimit = sessionSize
+        savedMinutes = minutes
+        reviewLimit = reviewWords
+        savedStudyTime = studyTime
         isCompleted = true
         if let uid = authService.user?.uid {
             PreferencesSync.upload(uid: uid, from: AccountStore.preferences(for: uid))
         }
         dismiss()
+    }
+}
+
+private extension LearningStage {
+    var demoMeaning: String {
+        switch self {
+        case .unfamiliar: "New to you — you've just met this word."
+        case .learning: "You've seen it, but it's still slippery."
+        case .improving: "You usually remember it."
+        case .familiar: "You know it well."
+        case .mastered: "Mastered — it no longer appears in reviews."
+        }
+    }
+}
+
+private extension View {
+    // The rounded card used for every answer, outlined in blue when selected.
+    func choiceCard(isSelected: Bool) -> some View {
+        self.padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(isSelected ? .blue : .clear, lineWidth: 2))
     }
 }

@@ -2,6 +2,16 @@ import Foundation
 
 // Keep article and video difficulty recommendations consistent.
 enum RecommendationRules {
+    // The survey's five self-rated levels map onto the three content difficulties.
+    static func difficulty(forLevel level: Int) -> String {
+        switch level {
+        case 1: "beginner"
+        case 2, 3: "intermediate"
+        case 4, 5: "advanced"
+        default: ""
+        }
+    }
+
     static func rank(_ value: String) -> Int? {
         switch value.lowercased() {
         case "beginner": 0

@@ -6,9 +6,9 @@ import Foundation
 // Display settings (theme, text size) stay on each phone.
 enum PreferencesSync {
     static let syncedKeys = [
-        "learningQuestionnaireCompleted_v1", "learningGoals_v1", "englishLevel_v1",
-        "dailyLearningTime_v1", "preferredLearningFormat_v1", "preferredStudyTime_v1",
-        "videoInterests_v1", "reviewLimit"
+        "learningQuestionnaireCompleted_v1", "heardFrom_v1", "englishLevel_v2",
+        "learningGoals_v1", "videoInterests_v1", "dailyMinutes_v1",
+        "preferredStudyTime_v1", "reviewLimit"
     ]
 
     // Called after the survey is saved. We don't wait for it, so it also works offline;

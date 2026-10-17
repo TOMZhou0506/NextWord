@@ -3,7 +3,9 @@ import SwiftUI
 // Group prepared video lessons by difficulty or interest.
 struct VideoLibraryView: View {
     @AppStorage("learningQuestionnaireCompleted_v1") private var hasPreferences = false
-    @AppStorage("englishLevel_v1") private var englishLevel = ""
+    @AppStorage("englishLevel_v2") private var surveyLevel = 0
+    // The 1–5 survey level as a content difficulty, e.g. "intermediate".
+    private var englishLevel: String { RecommendationRules.difficulty(forLevel: surveyLevel) }
     @AppStorage("videoInterests_v1") private var savedInterests = ""
 
     private enum Grouping: String, CaseIterable {
