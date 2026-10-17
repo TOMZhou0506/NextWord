@@ -13,6 +13,9 @@ final class AuthService: ObservableObject {
     @Published private(set) var user: User?
     // True until Firebase has told us whether a user is already signed in.
     @Published private(set) var isCheckingAuthentication = true
+    // The account's name, published separately because Firebase changes User in place,
+    // which SwiftUI would not notice on its own.
+    @Published private(set) var displayName = ""
 
     private let auth = Auth.auth()
     private let db = Firestore.firestore()
@@ -23,6 +26,7 @@ final class AuthService: ObservableObject {
         authListener = auth.addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 self?.user = user
+                self?.displayName = user?.displayName ?? ""
                 self?.isCheckingAuthentication = false
             }
         }
@@ -52,8 +56,24 @@ final class AuthService: ObservableObject {
             if let error { print("Could not save user profile: \(error.localizedDescription)") }
         }
 
-        // Publish the user again so screens pick up the new display name.
-        user = auth.currentUser
+        displayName = cleanName
+    }
+
+    // Change the name on the Firebase account and in the users/{uid} profile.
+    func updateDisplayName(_ name: String) async throws {
+        guard let user else { return }
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let change = user.createProfileChangeRequest()
+        change.displayName = cleanName
+        try await change.commitChanges()
+
+        // merge: true only changes displayName and keeps the other profile fields.
+        db.collection("users").document(user.uid).setData(["displayName": cleanName], merge: true) { error in
+            if let error { print("Could not update user profile: \(error.localizedDescription)") }
+        }
+
+        displayName = cleanName
     }
 
     func sendPasswordReset(email: String) async throws {

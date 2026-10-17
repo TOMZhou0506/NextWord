@@ -39,7 +39,6 @@ struct FeatureRow: View {
 
 struct ProfileView: View {
     @EnvironmentObject private var authService: AuthService
-    @AppStorage("displayName") private var displayName = ""
     @AppStorage("learningQuestionnaireCompleted_v1") private var hasLearningPreferences = false
     @Query private var words: [SavedWord]
     @State private var confirmSignOut = false
@@ -50,7 +49,7 @@ struct ProfileView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 76)).foregroundStyle(.blue.gradient).accessibilityHidden(true)
-                    Text(displayName.isEmpty ? "Your learning space" : displayName).font(.title.bold())
+                    Text(authService.displayName.isEmpty ? "Your learning space" : authService.displayName).font(.title.bold())
                     Text(authService.user?.email ?? "").font(.subheadline).foregroundStyle(.secondary)
                     Button("Sign out", role: .destructive) { confirmSignOut = true }
                         .buttonStyle(.bordered).controlSize(.large)
@@ -96,24 +95,46 @@ struct ProfileView: View {
 }
 
 struct EditProfileView: View {
-    @AppStorage("displayName") private var displayName = ""
+    @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    private var cleanName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     var body: some View {
         Form {
             Section("Display name") {
                 TextField("Your name", text: $name).textContentType(.nickname).textInputAutocapitalization(.words)
             }
             Section {
-                Text("Your name is saved on this device and appears on your home screen.").foregroundStyle(.secondary)
+                Text("Your name is saved to your NextWord account and appears on your home screen.").foregroundStyle(.secondary)
+            }
+            if let errorMessage {
+                Section { Text(errorMessage).foregroundStyle(.red) }
             }
         }.navigationTitle("Edit profile").navigationBarTitleDisplayMode(.inline)
-            .onAppear { name = displayName }
+            .onAppear { name = authService.displayName }
             .toolbar {
-                Button("Save") {
-                    displayName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                    dismiss()
-                }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 40)
+                if isSaving {
+                    ProgressView()
+                } else {
+                    Button("Save") { Task { await save() } }
+                        .disabled(cleanName.isEmpty || cleanName.count > AuthService.nameCharacterLimit || cleanName == authService.displayName)
+                }
             }
+    }
+
+    // Close the page only after Firebase has accepted the new name.
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            try await authService.updateDisplayName(cleanName)
+            dismiss()
+        } catch {
+            errorMessage = AuthService.message(for: error)
+        }
     }
 }

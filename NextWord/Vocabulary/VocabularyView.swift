@@ -3,12 +3,9 @@ import SwiftData
 
 // Show vocabulary totals and links to the five learning stages.
 struct VocabularyView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedWord.savedAt, order: .reverse) private var words: [SavedWord]
-    @AppStorage("didSeedVocabularyDemo_v1") private var didSeedDemo = false
     @AppStorage("reviewLimit") private var reviewLimit = 20
     @ScaledMetric(relativeTo: .largeTitle) private var totalFontSize = 48.0
-    @State private var seedError: String?
     @State private var isReviewPresented = false
 
     var body: some View {
@@ -17,12 +14,6 @@ struct VocabularyView: View {
                 totalCard
                 stageSummary
                 reviewPlan
-
-                if let seedError {
-                    Text("Could not add demo words: \(seedError)")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
             }
             .padding()
         }
@@ -38,7 +29,6 @@ struct VocabularyView: View {
                 .accessibilityLabel("Search dictionary")
             }
         }
-        .task { addDemoWordsIfNeeded() }
         .fullScreenCover(isPresented: $isReviewPresented) {
             VocabularyReviewView(words: reviewWords)
         }
@@ -125,33 +115,6 @@ struct VocabularyView: View {
         }
         .padding(20)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-    }
-
-    // Add sample words once, without changing words already saved by the user.
-    private func addDemoWordsIfNeeded() {
-        guard !didSeedDemo else { return }
-        let samples: [(String, LearningStage)] = [
-            ("tedious", .unfamiliar), ("overwhelmed", .unfamiliar),
-            ("bloom", .learning), ("renewal", .learning),
-            ("noticeable", .improving), ("campaign", .improving),
-            ("grass", .familiar), ("speech", .familiar),
-            ("flower", .mastered), ("travel", .mastered)
-        ]
-        let existingKeys = Set(words.map(\.lookupKey))
-
-        for (text, stage) in samples where !existingKeys.contains(text) {
-            let word = SavedWord(word: text)
-            word.stage = stage
-            modelContext.insert(word)
-        }
-
-        do {
-            try modelContext.save()
-            didSeedDemo = true
-        } catch {
-            modelContext.rollback()
-            seedError = error.localizedDescription
-        }
     }
 }
 

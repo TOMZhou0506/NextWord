@@ -35,7 +35,11 @@ struct AuthenticationView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Image(systemName: "book.pages.fill").font(.system(size: 44)).foregroundStyle(.blue)
+                        // The blue bird from the app icon, so the first screen matches the Home Screen icon.
+                        Image("NextWordBird").resizable().scaledToFit()
+                            .frame(width: 88, height: 88)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .accessibilityHidden(true)
                         Text(mode == .signIn ? "Your next word awaits." : mode == .register ? "Start your next chapter." : "Let’s get you back in.")
                             .font(.largeTitle.bold())
                         Text(mode == .reset ? "Enter your email to request a password reset." : "A home for every word you discover.")
@@ -53,12 +57,15 @@ struct AuthenticationView: View {
                             TextField("Your name", text: $name).textContentType(.nickname)
                                 .textInputAutocapitalization(.words).focused($focusedField, equals: .name)
                                 .submitLabel(.next).onSubmit { focusedField = .email }
+                                .authField()
                         }
                         fieldLabel("Email")
-                        TextField("you@example.com", text: $email).textContentType(.emailAddress)
+                        // verbatim stops SwiftUI from turning the sample address into a blue link.
+                        TextField("Email", text: $email, prompt: Text(verbatim: "you@example.com")).textContentType(.emailAddress)
                             .keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
                             .focused($focusedField, equals: .email).submitLabel(mode == .reset ? .done : .next)
                             .onSubmit { if mode != .reset { focusedField = .password } }
+                            .authField()
                         if !email.isEmpty && !validEmail {
                             Text("Enter a valid email address.").font(.caption).foregroundStyle(.red)
                         }
@@ -75,11 +82,13 @@ struct AuthenticationView: View {
                                     Image(systemName: showPassword ? "eye.slash" : "eye").frame(minWidth: 44, minHeight: 44)
                                 }.accessibilityLabel(showPassword ? "Hide password" : "Show password")
                             }
+                            .authField()
                             if mode == .register {
                                 Text("Use at least 8 characters.").font(.caption).foregroundStyle(.secondary)
                                 fieldLabel("Confirm password")
                                 SecureField("Repeat your password", text: $confirmPassword).textContentType(.newPassword)
                                     .focused($focusedField, equals: .confirmation)
+                                    .authField()
                                 if !confirmPassword.isEmpty && password != confirmPassword {
                                     Text("Passwords don’t match.").font(.caption).foregroundStyle(.red)
                                 }
@@ -88,7 +97,7 @@ struct AuthenticationView: View {
                             }
                         }
                     }
-                    .textFieldStyle(.roundedBorder).autocorrectionDisabled().textInputAutocapitalization(.never)
+                    .autocorrectionDisabled().textInputAutocapitalization(.never)
                     Button {
                         focusedField = nil
                         Task { await submit() }
@@ -142,5 +151,14 @@ struct AuthenticationView: View {
         } catch {
             errorMessage = AuthService.message(for: error)
         }
+    }
+}
+
+private extension View {
+    // Rounded card fields, matching the cards used across the rest of the app.
+    func authField() -> some View {
+        self.padding(.horizontal, 14)
+            .frame(minHeight: 50)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
     }
 }

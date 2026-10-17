@@ -24,7 +24,7 @@ struct ContentView: View {
 }
 
 private struct HomeView: View {
-    @AppStorage("displayName") private var displayName = ""
+    @EnvironmentObject private var authService: AuthService
     @Query private var words: [SavedWord]
 
     var body: some View {
@@ -32,7 +32,7 @@ private struct HomeView: View {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("A LITTLE EVERY DAY").font(.caption.weight(.semibold)).tracking(2).foregroundStyle(.blue)
-                    Text(displayName.isEmpty ? "Make every word count." : "Welcome back, \(displayName).")
+                    Text(authService.displayName.isEmpty ? "Make every word count." : "Welcome back, \(authService.displayName).")
                         .font(.largeTitle.bold())
                     Text("Discover a story. Collect new words. Keep growing.").foregroundStyle(.secondary)
                 }

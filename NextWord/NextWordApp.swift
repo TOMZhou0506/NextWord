@@ -7,7 +7,6 @@
 
 import FirebaseCore
 import SwiftUI
-import SwiftData
 import UIKit
 
 // Connect to Firebase once, as soon as the app finishes launching.
@@ -31,9 +30,8 @@ struct NextWordApp: App {
 
     var body: some Scene {
         WindowGroup {
+            // RootView opens the signed-in account's own database (see AccountStore).
             RootView()
         }
-        // Keep saved vocabulary and learning history available across tabs and app launches.
-        .modelContainer(for: [SavedWord.self, StudyEvent.self])
     }
 }
