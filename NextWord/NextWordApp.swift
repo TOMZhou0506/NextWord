@@ -8,9 +8,10 @@
 import FirebaseCore
 import SwiftUI
 import UIKit
+import UserNotifications
 
-// Connect to Firebase once, as soon as the app finishes launching.
-final class AppDelegate: NSObject, UIApplicationDelegate {
+// Runs once at launch: connects to Firebase and handles notifications (as in the Week 10 lab).
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -19,7 +20,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
             FirebaseApp.configure()
         }
+        // Become the notification delegate so the methods below are called.
+        UNUserNotificationCenter.current().delegate = self
         return true
+    }
+
+    // Without this, iOS hides notifications that arrive while NextWord is open.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 }
 

@@ -21,6 +21,7 @@ struct RootView: View {
 // Created only after Firebase is configured, so AuthService can safely use Firebase.
 private struct AuthenticatedRootView: View {
     @StateObject private var authService = AuthService()
+    @State private var notificationManager = NotificationManager()
 
     var body: some View {
         Group {
@@ -34,8 +35,9 @@ private struct AuthenticatedRootView: View {
                 AuthenticationView()
             }
         }
-        // Share one AuthService with every screen that needs the account.
+        // Share one AuthService and one NotificationManager with every screen.
         .environmentObject(authService)
+        .environment(notificationManager)
     }
 }
 

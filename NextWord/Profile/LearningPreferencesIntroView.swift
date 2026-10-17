@@ -17,6 +17,11 @@ struct LearningPreferencesIntroView: View {
     @AppStorage("learningQuestionnaireCompleted_v1") private var isCompleted = false
     // Set by "Later", so the survey doesn't pop up again after sign-in.
     @AppStorage("learningQuestionnaireSkipped_v1") private var isSkipped = false
+    @AppStorage("reminderEnabled_v1") private var reminderEnabled = false
+    // Reminder time as minutes after midnight, e.g. 1200 is 20:00.
+    @AppStorage("reminderMinutes_v1") private var reminderMinutes = 19 * 60
+    @Environment(NotificationManager.self) private var notificationManager
+    @State private var isFinishing = false
 
     private let pageCount = 7
     @State private var step = 0
@@ -98,14 +103,14 @@ struct LearningPreferencesIntroView: View {
         .background(Color(.systemGroupedBackground))
         .safeAreaInset(edge: .bottom) {
             Button {
-                if step == pageCount - 1 { savePreferences() }
+                if step == pageCount - 1 { Task { await savePreferences() } }
                 else { step += 1 }
             } label: {
                 Text(step == pageCount - 1 ? "Start learning" : "Continue")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(!canContinue)
+            .disabled(!canContinue || isFinishing)
             .controlSize(.large)
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
@@ -353,7 +358,9 @@ struct LearningPreferencesIntroView: View {
     }
 
     // "Later" leaves saved answers unchanged; nothing is written until this point.
-    private func savePreferences() {
+    private func savePreferences() async {
+        isFinishing = true
+        let studyTimeChanged = studyTime != savedStudyTime
         savedHeardFrom = heardFrom
         savedLevel = level
         savedGoals = goals.sorted().joined(separator: ",")
@@ -362,10 +369,29 @@ struct LearningPreferencesIntroView: View {
         reviewLimit = reviewWords
         savedStudyTime = studyTime
         isCompleted = true
+
+        await setUpReminder(studyTimeChanged: studyTimeChanged)
+
         if let uid = authService.user?.uid {
             PreferencesSync.upload(uid: uid)
         }
         dismiss()
+    }
+
+    // Ask for notification permission right after the learner picks a study time,
+    // when the reason for asking is easy to understand.
+    private func setUpReminder(studyTimeChanged: Bool) async {
+        // Keep a time the learner already chose in Settings, unless they picked a new study time.
+        if studyTimeChanged || !reminderEnabled {
+            let time = NotificationManager.defaultReminderTime(for: studyTime)
+            reminderMinutes = time.hour * 60 + time.minute
+        }
+        // iOS only shows the permission alert once; later calls return the saved answer.
+        let allowed = await notificationManager.requestAuthorization()
+        reminderEnabled = allowed
+        if allowed {
+            await notificationManager.scheduleDailyReminder(hour: reminderMinutes / 60, minute: reminderMinutes % 60)
+        }
     }
 
     // Leave without changing any answers, and remember not to pop up again.

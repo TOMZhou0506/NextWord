@@ -8,7 +8,7 @@ enum PreferencesSync {
     static let syncedKeys = [
         "learningQuestionnaireCompleted_v1", "learningQuestionnaireSkipped_v1", "heardFrom_v1", "englishLevel_v2",
         "learningGoals_v1", "videoInterests_v1", "dailyMinutes_v1",
-        "preferredStudyTime_v1", "reviewLimit"
+        "preferredStudyTime_v1", "reviewLimit", "reminderEnabled_v1", "reminderMinutes_v1"
     ]
 
     // Called after the survey or a learning setting is saved. We don't wait for it,

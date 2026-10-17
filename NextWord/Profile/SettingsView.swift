@@ -51,6 +51,7 @@ struct SettingsView: View {
                     }
                 }
             } header: { Text("Learning") } footer: { Text("Your level, interests and study time come from the learning survey. The review session size is the most words one review will include.") }
+            StudyReminderSection()
             Section {
                 NavigationLink { AboutNextWordView() } label: { Label("About NextWord", systemImage: "info.circle") }
                 NavigationLink("Data & privacy") {
