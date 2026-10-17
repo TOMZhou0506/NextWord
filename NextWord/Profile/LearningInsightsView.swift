@@ -2,10 +2,23 @@ import Charts
 import SwiftData
 import SwiftUI
 
-// Show progress that can be calculated from the vocabulary saved on this device.
+// Show progress from the saved vocabulary and the learning history on this device.
 struct LearningInsightsView: View {
     @Query private var words: [SavedWord]
+    @Query private var events: [StudyEvent]
     @State private var selectedDays = 30
+
+    // First day shown by the 7/30-day picker.
+    private var rangeStart: Date {
+        let today = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: 1 - selectedDays, to: today) ?? today
+    }
+
+    // End of today, so today's bar or point fits inside the chart.
+    private var rangeEnd: Date {
+        let today = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
+    }
 
     private struct DailyTotal: Identifiable {
         let date: Date
@@ -37,11 +50,22 @@ struct LearningInsightsView: View {
     }
 
     var body: some View {
+        // Build the history once per refresh and share it with every card.
+        let history = StudyHistory(events: events)
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                Picker("Time range", selection: $selectedDays) {
+                    Text("7 days").tag(7)
+                    Text("30 days").tag(30)
+                }
+                .pickerStyle(.segmented)
+
+                summaryTiles(history)
+                LearningCalendarCard(activityByDay: history.activityByDay)
+                AccuracyTrendCard(points: history.dailyAccuracy(since: rangeStart), rangeStart: rangeStart, rangeEnd: rangeEnd)
+                StageMovesCard(moves: history.dailyStageMoves(since: rangeStart), rangeStart: rangeStart, rangeEnd: rangeEnd)
                 vocabularyGrowth
                 currentStages
-                learningDays
             }
             .padding(20)
             .frame(maxWidth: 700)
@@ -51,18 +75,29 @@ struct LearningInsightsView: View {
         .navigationTitle("Learning Insights")
     }
 
+    // Streak and month count ignore the picker; reviews and accuracy follow it.
+    private func summaryTiles(_ history: StudyHistory) -> some View {
+        let recentReviews = history.reviews(since: rangeStart)
+        let correct = recentReviews.filter { $0.wasCorrect == true }.count
+        let accuracy = recentReviews.isEmpty
+            ? "–"
+            : "\(Int((Double(correct) / Double(recentReviews.count) * 100).rounded()))%"
+        let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+
+        return LazyVGrid(columns: columns, spacing: 14) {
+            InsightTile(value: history.currentStreak.formatted(), title: "Day streak", symbol: "flame.fill", colour: .orange)
+            InsightTile(value: history.studyDays(inMonthOf: Date()).formatted(), title: "Learning days this month", symbol: "calendar", colour: .blue)
+            InsightTile(value: recentReviews.count.formatted(), title: "Words reviewed · \(selectedDays) days", symbol: "arrow.triangle.2.circlepath", colour: .cyan)
+            InsightTile(value: accuracy, title: "Accuracy · \(selectedDays) days", symbol: "checkmark.seal.fill", colour: .green)
+        }
+    }
+
     private var vocabularyGrowth: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Words collected over time").font(.title3.bold())
             Text("\(words.count) words saved")
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
-
-            Picker("Time range", selection: $selectedDays) {
-                Text("7 days").tag(7)
-                Text("30 days").tag(30)
-            }
-            .pickerStyle(.segmented)
 
             if words.isEmpty {
                 ContentUnavailableView("No words saved yet", systemImage: "text.book.closed", description: Text("Save a word to start your chart."))
@@ -80,7 +115,7 @@ struct LearningInsightsView: View {
                 .frame(height: 220)
                 .accessibilityLabel("Cumulative words saved in the last \(selectedDays) days")
             }
-            Text("Counts are based on saved dates. Deleted words cannot be reconstructed.")
+            Text("Counts the words in your Vocabulary now, by the date each was saved.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -116,16 +151,6 @@ struct LearningInsightsView: View {
         }
         .insightsCard()
     }
-
-    private var learningDays: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Learning days").font(.title3.bold())
-            Text("A learning calendar will appear after the app starts recording each day's study activity. Existing words only store their latest review date, so earlier learning days cannot be recovered accurately.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .insightsCard()
-    }
 }
 
 private extension LearningStage {
@@ -140,7 +165,8 @@ private extension LearningStage {
     }
 }
 
-private extension View {
+// Shared card style, also used by LearningHistoryCards.swift.
+extension View {
     func insightsCard() -> some View {
         self.frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
