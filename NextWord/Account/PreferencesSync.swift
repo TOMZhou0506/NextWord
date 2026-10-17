@@ -6,14 +6,15 @@ import Foundation
 // Display settings (theme, text size) stay on each phone.
 enum PreferencesSync {
     static let syncedKeys = [
-        "learningQuestionnaireCompleted_v1", "heardFrom_v1", "englishLevel_v2",
+        "learningQuestionnaireCompleted_v1", "learningQuestionnaireSkipped_v1", "heardFrom_v1", "englishLevel_v2",
         "learningGoals_v1", "videoInterests_v1", "dailyMinutes_v1",
         "preferredStudyTime_v1", "reviewLimit"
     ]
 
-    // Called after the survey is saved. We don't wait for it, so it also works offline;
-    // Firestore sends the write once the phone is back online.
-    static func upload(uid: String, from defaults: UserDefaults) {
+    // Called after the survey or a learning setting is saved. We don't wait for it,
+    // so it also works offline; Firestore sends the write once the phone is back online.
+    static func upload(uid: String) {
+        let defaults = AccountStore.preferences(for: uid)
         var preferences: [String: Any] = [:]
         for key in syncedKeys {
             if let value = defaults.object(forKey: key) { preferences[key] = value }

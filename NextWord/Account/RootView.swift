@@ -45,11 +45,16 @@ private struct AccountScopedView: View {
     @State private var container: ModelContainer?
     @State private var preferences: UserDefaults?
     @State private var errorMessage: String?
+    @State private var showSurvey = false
 
     var body: some View {
         Group {
             if let container, let preferences {
                 ContentView()
+                    // New learners meet the survey first; it covers the whole screen.
+                    .fullScreenCover(isPresented: $showSurvey) {
+                        NavigationStack { LearningPreferencesIntroView() }
+                    }
                     .modelContainer(container)
                     // Every @AppStorage below now reads and writes this account's settings.
                     .defaultAppStorage(preferences)
@@ -75,6 +80,11 @@ private struct AccountScopedView: View {
             // On a new phone, bring back the survey answers saved in Firestore.
             // @AppStorage notices the new values and the screens update by themselves.
             await PreferencesSync.restoreIfNeeded(uid: uid, into: accountPreferences)
+
+            // Decide only after restoring, so a returning user on a new phone isn't asked again.
+            // "Later" sets the skipped flag; the survey can still be retaken from Settings.
+            showSurvey = !accountPreferences.bool(forKey: "learningQuestionnaireCompleted_v1")
+                && !accountPreferences.bool(forKey: "learningQuestionnaireSkipped_v1")
         }
     }
 }

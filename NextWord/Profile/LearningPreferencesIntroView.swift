@@ -15,6 +15,8 @@ struct LearningPreferencesIntroView: View {
     @AppStorage("reviewLimit") private var reviewLimit = 20
     @AppStorage("preferredStudyTime_v1") private var savedStudyTime = ""
     @AppStorage("learningQuestionnaireCompleted_v1") private var isCompleted = false
+    // Set by "Later", so the survey doesn't pop up again after sign-in.
+    @AppStorage("learningQuestionnaireSkipped_v1") private var isSkipped = false
 
     private let pageCount = 7
     @State private var step = 0
@@ -116,7 +118,7 @@ struct LearningPreferencesIntroView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    if step == 0 { dismiss() }
+                    if step == 0 { skipForNow() }
                     else { step -= 1 }
                 } label: {
                     Image(systemName: "chevron.left")
@@ -124,7 +126,7 @@ struct LearningPreferencesIntroView: View {
                 .accessibilityLabel(step == 0 ? "Close survey" : "Previous question")
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Later") { dismiss() }
+                Button("Later") { skipForNow() }
             }
         }
         .onAppear(perform: loadSavedPreferences)
@@ -191,14 +193,14 @@ struct LearningPreferencesIntroView: View {
                     Spacer()
                     Text(effortLabel).foregroundStyle(.secondary)
                 }
-                Slider(value: intBinding($minutes), in: 10...60, step: 5)
+                Slider(value: $minutes.asDouble, in: 10...60, step: 5)
                 Text("Time spent reading, watching and reviewing.").font(.caption).foregroundStyle(.secondary)
             }
             .choiceCard(isSelected: false)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("\(reviewWords) words per review").font(.headline).monospacedDigit()
-                Slider(value: intBinding($reviewWords), in: 10...100, step: 5)
+                Slider(value: $reviewWords.asDouble, in: 10...100, step: 5)
                 Text("The most words one review session will include.").font(.caption).foregroundStyle(.secondary)
             }
             .choiceCard(isSelected: false)
@@ -307,11 +309,6 @@ struct LearningPreferencesIntroView: View {
         }
     }
 
-    // Sliders work with Double; our settings are whole numbers.
-    private func intBinding(_ value: Binding<Int>) -> Binding<Double> {
-        Binding(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = Int($0) })
-    }
-
     private var canContinue: Bool {
         switch step {
         case 0: !heardFrom.isEmpty
@@ -366,7 +363,16 @@ struct LearningPreferencesIntroView: View {
         savedStudyTime = studyTime
         isCompleted = true
         if let uid = authService.user?.uid {
-            PreferencesSync.upload(uid: uid, from: AccountStore.preferences(for: uid))
+            PreferencesSync.upload(uid: uid)
+        }
+        dismiss()
+    }
+
+    // Leave without changing any answers, and remember not to pop up again.
+    private func skipForNow() {
+        isSkipped = true
+        if let uid = authService.user?.uid {
+            PreferencesSync.upload(uid: uid)
         }
         dismiss()
     }

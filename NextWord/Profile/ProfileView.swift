@@ -39,7 +39,6 @@ struct FeatureRow: View {
 
 struct ProfileView: View {
     @EnvironmentObject private var authService: AuthService
-    @AppStorage("learningQuestionnaireCompleted_v1") private var hasLearningPreferences = false
     @Query private var words: [SavedWord]
     @State private var confirmSignOut = false
     @State private var signOutError: String?
@@ -63,9 +62,6 @@ struct ProfileView: View {
                     LearningStat(value: words.filter { $0.stage == .mastered }.count, title: "Mastered", symbol: "checkmark.seal.fill")
                 }
                 VStack(spacing: 12) {
-                    NavigationLink { LearningPreferencesIntroView() } label: {
-                        FeatureRow(title: "Learning preferences", subtitle: hasLearningPreferences ? "Update your learning profile" : "Set up your English learning profile", symbol: "slider.horizontal.3", color: .blue)
-                    }
                     NavigationLink { LearningInsightsView() } label: {
                         FeatureRow(title: "Learning insights", subtitle: "See your vocabulary progress", symbol: "chart.xyaxis.line", color: .indigo)
                     }
