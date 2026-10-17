@@ -6,7 +6,20 @@ import UserNotifications
 enum NotificationConstants {
     // A fixed identifier, so scheduling again replaces the old reminder instead of adding a second one.
     static let dailyReminderIdentifier = "nextword.dailyStudyReminder"
+    static let snoozedReminderIdentifier = "nextword.snoozedStudyReminder"
     static let reminderCategoryIdentifier = "nextword.studyReminder"
+    static let snoozeActionIdentifier = "snooze"
+    // How long "Remind me in 1 hour" waits, in seconds. Use 60 for a quick test.
+    static let snoozeDelay: TimeInterval = 60 * 60
+}
+
+// Lets the AppDelegate (outside SwiftUI) ask the tab bar to show Vocabulary
+// when a reminder is tapped.
+@MainActor
+@Observable
+final class NotificationRouter {
+    static let shared = NotificationRouter()
+    var wantsVocabulary = false
 }
 
 // Asks for notification permission and schedules the daily study reminder.
@@ -69,9 +82,10 @@ final class NotificationManager {
         }
     }
 
+    // Also removes a snoozed reminder, so nothing is left behind after signing out.
     func cancelDailyReminder() {
         notificationCenter.removePendingNotificationRequests(
-            withIdentifiers: [NotificationConstants.dailyReminderIdentifier]
+            withIdentifiers: [NotificationConstants.dailyReminderIdentifier, NotificationConstants.snoozedReminderIdentifier]
         )
     }
 
