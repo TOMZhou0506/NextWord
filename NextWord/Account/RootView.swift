@@ -24,7 +24,10 @@ private struct AuthenticatedRootView: View {
     @State private var notificationManager = NotificationManager()
 
     var body: some View {
-        Group {
+        // A ZStack, not a Group: a Group copies its modifiers onto each child, so the
+        // .onChange below would be thrown away with the old screen and miss the sign-out.
+        // A ZStack is one real container that stays alive while its content changes.
+        ZStack {
             if authService.isCheckingAuthentication {
                 ProgressView()
             } else if let user = authService.user {
@@ -38,19 +41,26 @@ private struct AuthenticatedRootView: View {
         // Share one AuthService and one NotificationManager with every screen.
         .environmentObject(authService)
         .environment(notificationManager)
+        // Notifications belong to the whole phone, not one account, so a signed-out
+        // phone must not keep reminding the previous user.
+        .onChange(of: authService.user?.uid) { _, uid in
+            if uid == nil { notificationManager.cancelDailyReminder() }
+        }
     }
 }
 
 // Opens the signed-in account's own database and settings, and gives them to every tab.
 private struct AccountScopedView: View {
     let uid: String
+    @Environment(NotificationManager.self) private var notificationManager
     @State private var container: ModelContainer?
     @State private var preferences: UserDefaults?
     @State private var errorMessage: String?
     @State private var showSurvey = false
 
     var body: some View {
-        Group {
+        // ZStack for the same reason as above: .task must run once, not once per child screen.
+        ZStack {
             if let container, let preferences {
                 ContentView()
                     // New learners meet the survey first; it covers the whole screen.
@@ -87,6 +97,23 @@ private struct AccountScopedView: View {
             // "Later" sets the skipped flag; the survey can still be retaken from Settings.
             showSurvey = !accountPreferences.bool(forKey: "learningQuestionnaireCompleted_v1")
                 && !accountPreferences.bool(forKey: "learningQuestionnaireSkipped_v1")
+
+            await restoreReminder(from: accountPreferences)
         }
+    }
+
+    // Put back this account's own reminder (or none) after signing in or switching accounts.
+    private func restoreReminder(from preferences: UserDefaults) async {
+        guard preferences.bool(forKey: "reminderEnabled_v1") else {
+            notificationManager.cancelDailyReminder()
+            return
+        }
+        // On a new phone the reminder may be on from Firestore while this phone hasn't been asked yet.
+        await notificationManager.refresh()
+        if notificationManager.authorizationStatus == .notDetermined {
+            await notificationManager.requestAuthorization()
+        }
+        let minutes = preferences.object(forKey: "reminderMinutes_v1") as? Int ?? 19 * 60
+        await notificationManager.scheduleDailyReminder(hour: minutes / 60, minute: minutes % 60)
     }
 }
