@@ -15,7 +15,7 @@ struct NextWordApp: App {
         WindowGroup {
             ContentView()
         }
-        // Keep saved vocabulary available across tabs and app launches.
-        .modelContainer(for: SavedWord.self)
+        // Keep saved vocabulary and learning history available across tabs and app launches.
+        .modelContainer(for: [SavedWord.self, StudyEvent.self])
     }
 }
