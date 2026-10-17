@@ -5,6 +5,32 @@ import SwiftData
 // Signing out only closes the file; the data stays on the phone for the next sign-in.
 enum AccountStore {
     private static let legacyClaimedKey = "legacyStoreClaimed_v1"
+    private static let legacyPreferencesClaimedKey = "legacyPreferencesClaimed_v1"
+
+    // Settings and survey answers saved in UserDefaults.standard before accounts existed.
+    private static let legacyPreferenceKeys = [
+        "appearance", "readingSize", "highlightSavedWords", "reviewLimit",
+        "learningQuestionnaireCompleted_v1", "learningGoals_v1", "englishLevel_v1",
+        "dailyLearningTime_v1", "preferredLearningFormat_v1", "preferredStudyTime_v1", "videoInterests_v1"
+    ]
+
+    // Each account keeps its own settings (theme, text size, survey answers, review limit)
+    // in a separate UserDefaults suite. RootView hands it to every @AppStorage in the app.
+    static func preferences(for uid: String) -> UserDefaults {
+        let defaults = UserDefaults(suiteName: "account.\(uid)") ?? .standard
+        claimLegacyPreferencesIfNeeded(into: defaults)
+        return defaults
+    }
+
+    // Like the database: the first account to sign in keeps the settings already on this phone.
+    private static func claimLegacyPreferencesIfNeeded(into defaults: UserDefaults) {
+        let standard = UserDefaults.standard
+        guard !standard.bool(forKey: legacyPreferencesClaimedKey) else { return }
+        standard.set(true, forKey: legacyPreferencesClaimedKey)
+        for key in legacyPreferenceKeys {
+            if let value = standard.object(forKey: key) { defaults.set(value, forKey: key) }
+        }
+    }
 
     // Open (or create) Application Support/Accounts/<uid>.store for this account.
     static func container(for uid: String) throws -> ModelContainer {

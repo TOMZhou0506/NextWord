@@ -1,7 +1,10 @@
+import FirebaseAuth
 import SwiftUI
 
-// Ask eight questions and save answers locally only after the final step.
+// Ask eight questions and save answers only after the final step.
+// Answers go to this account's settings and are copied to Firestore.
 struct LearningPreferencesIntroView: View {
+    @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("learningGoals_v1") private var savedGoals = ""
     @AppStorage("englishLevel_v1") private var savedLevel = ""
@@ -270,6 +273,9 @@ struct LearningPreferencesIntroView: View {
         savedInterests = interests.sorted().joined(separator: ",")
         reviewLimit = sessionSize
         isCompleted = true
+        if let uid = authService.user?.uid {
+            PreferencesSync.upload(uid: uid, from: AccountStore.preferences(for: uid))
+        }
         dismiss()
     }
 }

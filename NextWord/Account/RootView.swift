@@ -39,17 +39,20 @@ private struct AuthenticatedRootView: View {
     }
 }
 
-// Opens the signed-in account's own database and gives it to every tab.
+// Opens the signed-in account's own database and settings, and gives them to every tab.
 private struct AccountScopedView: View {
     let uid: String
     @State private var container: ModelContainer?
+    @State private var preferences: UserDefaults?
     @State private var errorMessage: String?
 
     var body: some View {
         Group {
-            if let container {
+            if let container, let preferences {
                 ContentView()
                     .modelContainer(container)
+                    // Every @AppStorage below now reads and writes this account's settings.
+                    .defaultAppStorage(preferences)
             } else if let errorMessage {
                 ContentUnavailableView(
                     "Could not open your data",
@@ -65,7 +68,13 @@ private struct AccountScopedView: View {
                 container = try AccountStore.container(for: uid)
             } catch {
                 errorMessage = error.localizedDescription
+                return
             }
+            let accountPreferences = AccountStore.preferences(for: uid)
+            preferences = accountPreferences
+            // On a new phone, bring back the survey answers saved in Firestore.
+            // @AppStorage notices the new values and the screens update by themselves.
+            await PreferencesSync.restoreIfNeeded(uid: uid, into: accountPreferences)
         }
     }
 }
