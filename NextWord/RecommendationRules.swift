@@ -28,9 +28,13 @@ enum RecommendationRules {
         return gap <= 1 ? gap : nil
     }
 
+    // A short, specific explanation, e.g. "Matches your level · Intermediate".
     static func reason(level: String, content: String) -> String {
         guard let learnerRank = rank(level), let contentRank = rank(content) else { return "" }
-        if learnerRank == contentRank { return "Matches your level" }
-        return contentRank < learnerRank ? "Good for practice" : "A little challenge"
+        let difficultyName = content.capitalized
+        if learnerRank == contentRank { return "Matches your level · \(difficultyName)" }
+        return contentRank < learnerRank
+            ? "Easier practice · \(difficultyName)"
+            : "A little challenge · \(difficultyName)"
     }
 }

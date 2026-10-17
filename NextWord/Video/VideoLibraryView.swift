@@ -182,8 +182,9 @@ struct VideoLibraryView: View {
 
     private func recommendationReason(for video: VideoOption) -> String {
         let levelReason = RecommendationRules.reason(level: englishLevel, content: video.difficulty.rawValue)
-        let interestReason = preferredInterests.contains(video.interest.preferenceKey) ? " · Your interest" : ""
-        return "\(levelReason)\(interestReason) · \(video.difficulty.rawValue)"
+        // Name the topic the learner picked in the survey, e.g. "You like Basketball".
+        let interestReason = preferredInterests.contains(video.interest.preferenceKey) ? " · You like \(video.interest.rawValue)" : ""
+        return "\(levelReason)\(interestReason)"
     }
 
     // Both grouping modes open the same video and timed transcript.

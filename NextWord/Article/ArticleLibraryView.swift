@@ -95,7 +95,7 @@ struct ArticleLibraryView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.article.title).font(.headline)
                 if let reason {
-                    Text("\(reason) · \(item.article.difficulty.label)")
+                    Text(reason)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.blue)
                 }
