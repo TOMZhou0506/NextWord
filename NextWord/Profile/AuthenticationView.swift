@@ -1,20 +1,24 @@
 import SwiftUI
 
-// UI-only authentication flow. No credentials or authentication state are persisted.
+// Sign in, create an account or reset the password with Firebase Authentication.
+// Shown by RootView whenever nobody is signed in.
 struct AuthenticationView: View {
     private enum Mode: String, CaseIterable {
         case signIn = "Sign in"
         case register = "Create account"
         case reset = "Reset password"
     }
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authService: AuthService
     @State private var mode = Mode.signIn
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var name = ""
     @State private var showPassword = false
-    @State private var showNotice = false
+    // True while waiting for Firebase, so the button can't be pressed twice.
+    @State private var isWorking = false
+    @State private var errorMessage: String?
+    @State private var showResetSent = false
     @FocusState private var focusedField: Field?
     private enum Field { case name, email, password, confirmation }
 
@@ -24,7 +28,7 @@ struct AuthenticationView: View {
     }
     private var canSubmit: Bool {
         validEmail && (mode == .reset || !password.isEmpty) &&
-        (mode != .register || (password.count >= 8 && password == confirmPassword && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= 40))
+        (mode != .register || (password.count >= 8 && password == confirmPassword && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= AuthService.nameCharacterLimit))
     }
     var body: some View {
         NavigationStack {
@@ -87,29 +91,56 @@ struct AuthenticationView: View {
                     .textFieldStyle(.roundedBorder).autocorrectionDisabled().textInputAutocapitalization(.never)
                     Button {
                         focusedField = nil
-                        showNotice = true
+                        Task { await submit() }
                     } label: {
-                        Text(mode.rawValue).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
-                    }.buttonStyle(.borderedProminent).disabled(!canSubmit)
-                    Label("Preview only · Account services are not connected yet. No account will be created and your password is not saved.", systemImage: "info.circle")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        Group {
+                            if isWorking { ProgressView() } else { Text(mode.rawValue) }
+                        }
+                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
+                    }.buttonStyle(.borderedProminent).disabled(!canSubmit || isWorking)
                     if mode == .reset { Button("Back to sign in") { mode = .signIn } }
-                    Button("Continue as guest") { dismiss() }.frame(maxWidth: .infinity)
                 }.padding(24).frame(maxWidth: 520).frame(maxWidth: .infinity)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(mode.rawValue).navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
             .onChange(of: mode) { _, _ in
                 password = ""
                 confirmPassword = ""
                 showPassword = false
                 focusedField = nil
             }
-            .alert("Account connection coming soon", isPresented: $showNotice) {
+            .alert("Something went wrong", isPresented: errorBinding) {
                 Button("OK", role: .cancel) { }
-            } message: { Text("This screen is ready for a future account service. Sign-in, registration and password reset are not available yet. Continue as a guest to use NextWord.") }
+            } message: { Text(errorMessage ?? "") }
+            .alert("Check your email", isPresented: $showResetSent) {
+                Button("OK") { mode = .signIn }
+            } message: { Text("If an account exists for this email, we've sent a link to reset your password.") }
         }
     }
     private func fieldLabel(_ title: String) -> some View { Text(title).font(.subheadline.weight(.semibold)) }
+
+    // Show the alert while there is an error message; clear it when the alert closes.
+    private var errorBinding: Binding<Bool> {
+        Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
+    }
+
+    // One button handles all three modes. After a successful sign-in or registration,
+    // RootView sees the new user and switches to the main app by itself.
+    private func submit() async {
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            switch mode {
+            case .signIn:
+                try await authService.signIn(email: email, password: password)
+            case .register:
+                try await authService.createAccount(name: name, email: email, password: password)
+            case .reset:
+                try await authService.sendPasswordReset(email: email)
+                showResetSent = true
+            }
+        } catch {
+            errorMessage = AuthService.message(for: error)
+        }
+    }
 }

@@ -1,3 +1,4 @@
+import FirebaseAuth
 import SwiftUI
 import SwiftData
 
@@ -37,10 +38,12 @@ struct FeatureRow: View {
 }
 
 struct ProfileView: View {
+    @EnvironmentObject private var authService: AuthService
     @AppStorage("displayName") private var displayName = ""
     @AppStorage("learningQuestionnaireCompleted_v1") private var hasLearningPreferences = false
     @Query private var words: [SavedWord]
-    @State private var showAuthentication = false
+    @State private var confirmSignOut = false
+    @State private var signOutError: String?
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -48,11 +51,12 @@ struct ProfileView: View {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 76)).foregroundStyle(.blue.gradient).accessibilityHidden(true)
                     Text(displayName.isEmpty ? "Your learning space" : displayName).font(.title.bold())
-                    Text("Learning on this device").font(.subheadline).foregroundStyle(.secondary)
-                    Button("Sign in or create an account") { showAuthentication = true }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
-                    Text("Account connection is coming soon. You can keep learning as a guest.")
-                        .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Text(authService.user?.email ?? "").font(.subheadline).foregroundStyle(.secondary)
+                    Button("Sign out", role: .destructive) { confirmSignOut = true }
+                        .buttonStyle(.bordered).controlSize(.large)
+                    if let signOutError {
+                        Text(signOutError).font(.caption).foregroundStyle(.red)
+                    }
                 }.frame(maxWidth: .infinity).padding(24)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 28))
                 HStack(spacing: 14) {
@@ -78,7 +82,16 @@ struct ProfileView: View {
                 }.buttonStyle(.plain)
             }.padding(20).frame(maxWidth: 700).frame(maxWidth: .infinity)
         }.background(Color(.systemGroupedBackground)).navigationTitle("Profile")
-            .sheet(isPresented: $showAuthentication) { AuthenticationView() }
+            .confirmationDialog("Sign out of NextWord?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+                // RootView sees that nobody is signed in and shows the sign-in screen.
+                Button("Sign out", role: .destructive) {
+                    do {
+                        try authService.signOut()
+                    } catch {
+                        signOutError = AuthService.message(for: error)
+                    }
+                }
+            }
     }
 }
 
