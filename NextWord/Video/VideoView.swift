@@ -54,7 +54,7 @@ struct VideoView: View {
         .navigationTitle("Video")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedWord) { selection in
-            ArticleWordSheetView(word: selection.text)
+            ArticleWordSheetView(word: selection.text, source: .video)
                 .presentationDetents([.medium, .large])
         }
         .task(id: videoID) { loadTranscript() }

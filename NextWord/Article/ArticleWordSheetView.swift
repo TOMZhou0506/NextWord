@@ -4,6 +4,8 @@ import SwiftData
 // Show a tapped article word, then optionally save it to the shared vocabulary.
 struct ArticleWordSheetView: View {
     let word: String
+    // Tells the learning history whether this word came from an article or a video.
+    var source: StudyEventSource = .article
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -219,12 +221,18 @@ struct ArticleWordSheetView: View {
         guard let selectedStage else { return }
         var insertedWord: SavedWord?
         if let existingWord {
+            // Only a real colour change is worth recording.
+            if existingWord.stage != selectedStage {
+                modelContext.insert(StudyEvent(kind: .stageChanged, source: source, word: existingWord.word,
+                                               oldStage: existingWord.stage, newStage: selectedStage))
+            }
             existingWord.stage = selectedStage
         } else {
             let saved = SavedWord(word: word)
             saved.stage = selectedStage
             modelContext.insert(saved)
             insertedWord = saved
+            modelContext.insert(StudyEvent(kind: .saved, source: source, word: saved.word, newStage: selectedStage))
         }
         do {
             try modelContext.save()

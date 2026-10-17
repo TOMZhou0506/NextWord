@@ -158,7 +158,9 @@ struct VocabularyView: View {
 // Show only the English words saved in the selected learning stage.
 private struct VocabularyStageView: View {
     let stage: LearningStage
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedWord.word) private var words: [SavedWord]
+    @State private var deleteError: String?
 
     private var stageWords: [SavedWord] {
         words.filter { $0.stage == stage }
@@ -169,6 +171,14 @@ private struct VocabularyStageView: View {
             ForEach(stageWords) { word in
                 Text(word.word)
             }
+            // Swipe left on a row to delete it straight away.
+            .onDelete(perform: deleteWords)
+
+            if let deleteError {
+                Text("Could not delete word: \(deleteError)")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
         }
         .overlay {
             if stageWords.isEmpty {
@@ -176,6 +186,22 @@ private struct VocabularyStageView: View {
             }
         }
         .navigationTitle(stage.label)
+    }
+
+    // Remove the swiped words, but keep a history record of each one.
+    private func deleteWords(at offsets: IndexSet) {
+        let wordsToDelete = offsets.map { stageWords[$0] }
+        for word in wordsToDelete {
+            modelContext.insert(StudyEvent(kind: .deleted, source: .vocabulary, word: word.word, oldStage: word.stage))
+            modelContext.delete(word)
+        }
+        do {
+            try modelContext.save()
+            deleteError = nil
+        } catch {
+            modelContext.rollback()
+            deleteError = error.localizedDescription
+        }
     }
 }
 

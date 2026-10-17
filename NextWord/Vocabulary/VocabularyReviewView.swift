@@ -200,8 +200,19 @@ struct VocabularyReviewView: View {
         let nextIndex = rememberedCorrectly
             ? min(oldIndex + 1, stages.count - 1)
             : max(oldIndex - 1, 0)
+        let oldStage = word.stage
         word.stage = stages[nextIndex]
         word.lastReviewedAt = Date()
+
+        // Record this card in the learning history; it is saved together with the new stage.
+        modelContext.insert(StudyEvent(
+            kind: .reviewed,
+            source: .review,
+            word: word.word,
+            oldStage: oldStage,
+            newStage: word.stage,
+            wasCorrect: rememberedCorrectly
+        ))
 
         do {
             try modelContext.save()

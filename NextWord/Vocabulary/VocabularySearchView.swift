@@ -157,11 +157,17 @@ struct VocabularySearchView: View {
     private func saveWord(_ entry: WordsetEntry) {
         let wasAlreadySaved = existingWord != nil
         if let existingWord {
+            // Only a real colour change is worth recording.
+            if existingWord.stage != selectedStage {
+                modelContext.insert(StudyEvent(kind: .stageChanged, source: .search, word: existingWord.word,
+                                               oldStage: existingWord.stage, newStage: selectedStage))
+            }
             existingWord.stage = selectedStage
         } else {
             let word = SavedWord(word: entry.word)
             word.stage = selectedStage
             modelContext.insert(word)
+            modelContext.insert(StudyEvent(kind: .saved, source: .search, word: word.word, newStage: selectedStage))
         }
         do {
             try modelContext.save()
