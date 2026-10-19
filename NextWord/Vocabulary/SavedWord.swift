@@ -32,3 +32,15 @@ final class SavedWord {
         self.meaning = meaning
     }
 }
+
+// Which words the next review includes. Used by Vocabulary and Home.
+enum ReviewPlan {
+    // Red through green words, least familiar first; blue words are mastered and skipped.
+    static func words(from words: [SavedWord], limit: Int) -> [SavedWord] {
+        let stages: [LearningStage] = [.unfamiliar, .learning, .improving, .familiar]
+        return Array(words
+            .filter { stages.contains($0.stage) }
+            .sorted { (stages.firstIndex(of: $0.stage) ?? stages.count) < (stages.firstIndex(of: $1.stage) ?? stages.count) }
+            .prefix(limit))
+    }
+}

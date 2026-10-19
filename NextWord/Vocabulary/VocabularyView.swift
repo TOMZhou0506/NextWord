@@ -87,13 +87,9 @@ struct VocabularyView: View {
         words.filter { $0.stage == stage }
     }
 
-    // Review red through green words, with less familiar words first; blue is excluded.
+    // Shared with Home, so both "Start review" buttons review the same words.
     private var reviewWords: [SavedWord] {
-        let stages: [LearningStage] = [.unfamiliar, .learning, .improving, .familiar]
-        return Array(words
-            .filter { stages.contains($0.stage) }
-            .sorted { (stages.firstIndex(of: $0.stage) ?? stages.count) < (stages.firstIndex(of: $1.stage) ?? stages.count) }
-            .prefix(reviewLimit))
+        ReviewPlan.words(from: words, limit: reviewLimit)
     }
 
     private var reviewPlan: some View {

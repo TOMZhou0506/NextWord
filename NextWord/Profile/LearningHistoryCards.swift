@@ -38,6 +38,44 @@ struct StudyHistory {
         return streak
     }
 
+    // The longest run of back-to-back learning days ever.
+    var bestStreak: Int {
+        let days = activityByDay.keys.sorted()
+        var best = 0
+        var run = 0
+        var previous: Date?
+        for day in days {
+            // Continue the run only if this day comes straight after the previous one.
+            if let previous, calendar.date(byAdding: .day, value: 1, to: previous) == day {
+                run += 1
+            } else {
+                run = 1
+            }
+            best = max(best, run)
+            previous = day
+        }
+        return best
+    }
+
+    var studiedToday: Bool {
+        activityByDay[calendar.startOfDay(for: Date())] != nil
+    }
+
+    // The seven days of the current week, starting on the user's first weekday.
+    var thisWeek: [Date] {
+        guard let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start else { return [] }
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+    }
+
+    func studied(on day: Date) -> Bool {
+        activityByDay[calendar.startOfDay(for: day)] != nil
+    }
+
+    // Review cards finished today, used for Home's daily task.
+    var reviewsToday: Int {
+        reviews.filter { calendar.isDateInToday($0.date) }.count
+    }
+
     func studyDays(inMonthOf date: Date) -> Int {
         activityByDay.keys.filter { calendar.isDate($0, equalTo: date, toGranularity: .month) }.count
     }
