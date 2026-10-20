@@ -36,55 +36,6 @@ struct LearningPreferencesIntroView: View {
     @State private var hasTriedDemo = false
     @State private var hasLoaded = false
 
-    private struct Choice: Identifiable {
-        let id: String
-        let title: String
-        let symbol: String
-        var detail: String? = nil
-    }
-
-    private let sourceChoices = [
-        Choice(id: "friends", title: "Friends or family", symbol: "person.2"),
-        Choice(id: "appstore", title: "App Store", symbol: "apple.logo"),
-        Choice(id: "xiaohongshu", title: "Xiaohongshu (RED)", symbol: "book.closed"),
-        Choice(id: "bilibili", title: "Bilibili", symbol: "play.tv"),
-        Choice(id: "tiktok", title: "TikTok or Douyin", symbol: "music.note"),
-        Choice(id: "instagram", title: "Instagram or Facebook", symbol: "camera"),
-        Choice(id: "search", title: "Search engine", symbol: "magnifyingglass"),
-        Choice(id: "school", title: "School or teacher", symbol: "graduationcap"),
-        Choice(id: "other", title: "Other", symbol: "ellipsis.circle")
-    ]
-    // Five self-rated levels; RecommendationRules turns them into three content difficulties.
-    private let levelChoices = [
-        (1, "I'm new to English"),
-        (2, "I know some common words"),
-        (3, "I can have basic conversations"),
-        (4, "I can talk about various topics"),
-        (5, "I can discuss most topics in detail")
-    ]
-    private let goalChoices = [
-        Choice(id: "travel", title: "Prepare for travel", symbol: "airplane"),
-        Choice(id: "people", title: "Connect with people", symbol: "person.2.wave.2"),
-        Choice(id: "education", title: "Support my education", symbol: "graduationcap"),
-        Choice(id: "career", title: "Boost my career", symbol: "briefcase"),
-        Choice(id: "media", title: "Enjoy videos and games", symbol: "play.rectangle"),
-        Choice(id: "productive", title: "Spend time productively", symbol: "brain.head.profile"),
-        Choice(id: "fun", title: "Just for fun", symbol: "party.popper")
-    ]
-    private let interestChoices = [
-        Choice(id: "gaming", title: "Gaming", symbol: "gamecontroller"),
-        Choice(id: "f1", title: "F1 Racing", symbol: "flag.checkered"),
-        Choice(id: "basketball", title: "Basketball", symbol: "basketball"),
-        Choice(id: "lifestyle", title: "Lifestyle", symbol: "person.2"),
-        Choice(id: "none", title: "No preference", symbol: "sparkles")
-    ]
-    private let studyTimeChoices = [
-        Choice(id: "morning", title: "Morning", symbol: "sunrise"),
-        Choice(id: "afternoon", title: "Afternoon", symbol: "sun.max"),
-        Choice(id: "evening", title: "Evening", symbol: "moon.stars"),
-        Choice(id: "varies", title: "No regular time", symbol: "calendar")
-    ]
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -162,12 +113,12 @@ struct LearningPreferencesIntroView: View {
 
     @ViewBuilder private var pageContent: some View {
         switch step {
-        case 0: choices(sourceChoices, selected: [heardFrom]) { heardFrom = $0 }
+        case 0: choices(SurveyOptions.sources, selected: [heardFrom]) { heardFrom = $0 }
         case 1: levelPage
-        case 2: choices(goalChoices, selected: goals) { toggle($0, in: &goals) }
-        case 3: choices(interestChoices, selected: interests) { toggleInterest($0) }
+        case 2: choices(SurveyOptions.goals, selected: goals) { toggle($0, in: &goals) }
+        case 3: choices(SurveyOptions.interests, selected: interests) { toggleInterest($0) }
         case 4: dailyGoalPage
-        case 5: choices(studyTimeChoices, selected: [studyTime]) { studyTime = $0 }
+        case 5: choices(SurveyOptions.studyTimes, selected: [studyTime]) { studyTime = $0 }
         default: colourDemoPage
         }
     }
@@ -175,7 +126,7 @@ struct LearningPreferencesIntroView: View {
     // Signal bars fill up with each level, like a phone signal.
     private var levelPage: some View {
         VStack(spacing: 12) {
-            ForEach(levelChoices, id: \.0) { value, title in
+            ForEach(SurveyOptions.levels, id: \.0) { value, title in
                 Button { level = value } label: {
                     HStack(spacing: 16) {
                         Image(systemName: "cellularbars", variableValue: Double(value - 1) / 4)
@@ -299,7 +250,7 @@ struct LearningPreferencesIntroView: View {
         hasTriedDemo = true
     }
 
-    private func choices(_ options: [Choice], selected: Set<String>, action: @escaping (String) -> Void) -> some View {
+    private func choices(_ options: [SurveyOptions.Choice], selected: Set<String>, action: @escaping (String) -> Void) -> some View {
         VStack(spacing: 12) {
             ForEach(options) { option in
                 Button { action(option.id) } label: {

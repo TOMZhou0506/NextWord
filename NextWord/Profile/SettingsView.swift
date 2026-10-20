@@ -13,7 +13,6 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                NavigationLink { EditProfileView() } label: { Label("Display name", systemImage: "person.crop.circle") }
                 Picker(selection: $appearance) {
                     Text("System").tag("system")
                     Text("Light").tag("light")
@@ -34,9 +33,6 @@ struct SettingsView: View {
                 Toggle(isOn: $highlightSavedWords) { Label("Highlight saved words", systemImage: "highlighter") }
             } header: { Text("Reading") } footer: { Text("Highlight words you have saved while reading.") }
             Section {
-                NavigationLink { LearningPreferencesIntroView() } label: {
-                    Label("Retake learning survey", systemImage: "slider.horizontal.3")
-                }
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Daily goal · \(dailyMinutes) min", systemImage: "clock").monospacedDigit()
                     // Upload once the finger lifts, not on every small movement.
@@ -50,7 +46,7 @@ struct SettingsView: View {
                         if !editing { syncLearningSettings() }
                     }
                 }
-            } header: { Text("Learning") } footer: { Text("Your level, interests and study time come from the learning survey. The review session size is the most words one review will include.") }
+            } header: { Text("Learning") } footer: { Text("The review session size is the most words one review will include. To change your level or interests, edit your learning profile in Profile.") }
             StudyReminderSection()
             Section {
                 NavigationLink { AboutNextWordView() } label: { Label("About NextWord", systemImage: "info.circle") }
