@@ -46,8 +46,7 @@ struct SettingsView: View {
                         if !editing { syncLearningSettings() }
                     }
                 }
-            } header: { Text("Learning") } footer: { Text("The review session size is the most words one review will include. To change your level or interests, edit your learning profile in Profile.") }
-            StudyReminderSection()
+            } header: { Text("Learning") } footer: { Text("The review session size is the most words one review will include. To change your level or interests, retake the learning survey in Profile. Study reminders are in Profile too.") }
             Section {
                 NavigationLink { AboutNextWordView() } label: { Label("About NextWord", systemImage: "info.circle") }
                 NavigationLink("Data & privacy") {

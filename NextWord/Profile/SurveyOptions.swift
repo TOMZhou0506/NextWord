@@ -1,7 +1,6 @@
 import Foundation
 
-// The answers the learning survey offers. Shared by the survey (to ask)
-// and the Profile (to show the saved answers as readable text).
+// The answers the learning survey offers, kept apart from the survey screen's layout code.
 enum SurveyOptions {
     struct Choice: Identifiable {
         let id: String
@@ -54,14 +53,4 @@ enum SurveyOptions {
         Choice(id: "evening", title: "Evening", symbol: "moon.stars"),
         Choice(id: "varies", title: "No regular time", symbol: "calendar")
     ]
-
-    static func levelTitle(_ level: Int) -> String? {
-        levels.first { $0.0 == level }?.1
-    }
-
-    // Turn saved ids like "career,travel" into "Boost my career, Prepare for travel", keeping survey order.
-    static func titles(for saved: String, in options: [Choice]) -> String {
-        let ids = Set(saved.split(separator: ",").map(String.init))
-        return options.filter { ids.contains($0.id) }.map(\.title).joined(separator: ", ")
-    }
 }
