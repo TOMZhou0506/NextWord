@@ -115,7 +115,7 @@ struct VocabularyView: View {
             Button {
                 isReviewPresented = true
             } label: {
-                Text("Start Review · \(reviewWords.count) words")
+                Text("Start Review · \(reviewWords.count.counted("word"))")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)

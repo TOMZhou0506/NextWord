@@ -97,7 +97,7 @@ struct LearningInsightsView: View {
     private var vocabularyGrowth: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Words collected over time").font(.title3.bold())
-            Text("\(words.count) words saved")
+            Text("\(words.count.counted("word")) saved")
                 .font(.title2.weight(.semibold))
                 .monospacedDigit()
 

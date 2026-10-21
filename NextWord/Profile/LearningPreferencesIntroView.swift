@@ -4,6 +4,10 @@ import SwiftUI
 // A seven-page learning survey. Answers are saved only on the last page,
 // to this account's settings, and copied to Firestore.
 struct LearningPreferencesIntroView: View {
+    // true after sign-up: the learner must finish it before using the app.
+    // false when retaken from Profile: it can be left without changing anything.
+    var isRequired = false
+
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("heardFrom_v1") private var savedHeardFrom = ""
@@ -15,8 +19,6 @@ struct LearningPreferencesIntroView: View {
     @AppStorage("reviewLimit") private var reviewLimit = 20
     @AppStorage("preferredStudyTime_v1") private var savedStudyTime = ""
     @AppStorage("learningQuestionnaireCompleted_v1") private var isCompleted = false
-    // Set by "Later", so the survey doesn't pop up again after sign-in.
-    @AppStorage("learningQuestionnaireSkipped_v1") private var isSkipped = false
     @AppStorage("reminderEnabled_v1") private var reminderEnabled = false
     // Reminder time as minutes after midnight, e.g. 1200 is 20:00.
     @AppStorage("reminderMinutes_v1") private var reminderMinutes = 19 * 60
@@ -72,19 +74,28 @@ struct LearningPreferencesIntroView: View {
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    if step == 0 { skipForNow() }
-                    else { step -= 1 }
-                } label: {
-                    Image(systemName: "chevron.left")
+            // The first survey after sign-up can't be closed: on page 1 there's no back button.
+            // Later pages can still go back to change an earlier answer.
+            if !isRequired || step > 0 {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        if step == 0 { dismiss() }
+                        else { step -= 1 }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    .accessibilityLabel(step == 0 ? "Close survey" : "Previous question")
                 }
-                .accessibilityLabel(step == 0 ? "Close survey" : "Previous question")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Later") { skipForNow() }
+            // Retaking from Profile can be left at any time; saved answers stay unchanged.
+            if !isRequired {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Later") { dismiss() }
+                }
             }
         }
+        // Stop the swipe-down gesture from closing a required survey.
+        .interactiveDismissDisabled(isRequired)
         .onAppear(perform: loadSavedPreferences)
     }
 
@@ -347,15 +358,6 @@ struct LearningPreferencesIntroView: View {
         if allowed {
             await notificationManager.scheduleDailyReminder(hour: reminderMinutes / 60, minute: reminderMinutes % 60)
         }
-    }
-
-    // Leave without changing any answers, and remember not to pop up again.
-    private func skipForNow() {
-        isSkipped = true
-        if let uid = authService.user?.uid {
-            PreferencesSync.upload(uid: uid)
-        }
-        dismiss()
     }
 }
 

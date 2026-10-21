@@ -65,7 +65,7 @@ private struct AccountScopedView: View {
                 ContentView()
                     // New learners meet the survey first; it covers the whole screen.
                     .fullScreenCover(isPresented: $showSurvey) {
-                        NavigationStack { LearningPreferencesIntroView() }
+                        NavigationStack { LearningPreferencesIntroView(isRequired: true) }
                     }
                     .modelContainer(container)
                     // Every @AppStorage below now reads and writes this account's settings.
@@ -94,9 +94,9 @@ private struct AccountScopedView: View {
             await PreferencesSync.restoreIfNeeded(uid: uid, into: accountPreferences)
 
             // Decide only after restoring, so a returning user on a new phone isn't asked again.
-            // "Later" sets the skipped flag; the survey can still be retaken from Settings.
-            showSurvey = !accountPreferences.bool(forKey: "learningQuestionnaireCompleted_v1")
-                && !accountPreferences.bool(forKey: "learningQuestionnaireSkipped_v1")
+            // The survey is required until it has a valid 1–5 level. This also catches accounts that
+            // skipped it before, or answered the old three-level survey.
+            showSurvey = !PreferencesSync.hasCompletedSurvey(accountPreferences)
 
             await restoreReminder(from: accountPreferences)
         }

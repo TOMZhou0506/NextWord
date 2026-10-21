@@ -214,7 +214,6 @@ struct VocabularyReviewView: View {
         .overlay(RoundedRectangle(cornerRadius: 28).stroke(.cyan.opacity(0.2)))
     }
 
-    // Save only when the user finishes the card; closing early leaves it unchanged.
     // Show the celebrating bird for a moment when a word moves from green to blue.
     private func celebrate(_ word: String) {
         masteredWords.append(word)
@@ -226,6 +225,7 @@ struct VocabularyReviewView: View {
         }
     }
 
+    // Save only when the user finishes the card; closing early leaves it unchanged.
     private func finishCurrentWord(rememberedCorrectly: Bool) {
         guard !isFinished, rememberedBeforeReveal != nil else { return }
         let word = words[currentIndex]
@@ -368,7 +368,7 @@ struct VocabularyReviewView: View {
             BirdMascot(pose: .celebrate, size: 140, popsIn: true)
             Text("Review complete")
                 .font(.title2.bold())
-            Text("You reviewed \(words.count) words. Their learning stages have been saved.")
+            Text("You reviewed \(words.count.counted("word")). Their learning stages have been saved.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
             if !masteredWords.isEmpty {

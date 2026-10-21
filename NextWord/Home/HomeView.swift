@@ -69,7 +69,7 @@ private struct StreakCard: View {
                 // The flame bird when there's a streak; the sleeping bird waits for the first day.
                 BirdMascot(pose: streak > 0 ? .flame : .sleeping, size: 84)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(streak == 1 ? "1 day" : "\(streak) days")
+                    Text(streak.counted("day"))
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .monospacedDigit()
                     Text("Your learning streak · best \(history.bestStreak)")
@@ -144,7 +144,7 @@ private struct TodayTaskCard: View {
                         .font(.title2)
                         .foregroundStyle(isDone ? .green : .secondary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Review \(planCount) words").font(.headline)
+                        Text("Review \(planCount.counted("word"))").font(.headline)
                         Text("\(min(reviewedToday, planCount)) of \(planCount) done today")
                             .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
                     }
@@ -176,19 +176,27 @@ private struct ForYouSection: View {
     private var level: String { RecommendationRules.difficulty(forLevel: surveyLevel) }
     private var interests: Set<String> { RecommendationRules.interests(from: savedInterests) }
 
+    // Recommendations need a finished survey with a valid 1–5 level.
+    private var hasValidLevel: Bool { hasPreferences && (1...5).contains(surveyLevel) }
+
     var body: some View {
+        let article = hasValidLevel ? RecommendationRules.recommendedArticle(from: articles, level: level) : nil
+        let video = hasValidLevel
+            ? RecommendationRules.recommendedVideo(from: ContentCatalog.videos, level: level, interests: interests)
+            : nil
+        // Safety net: never show an empty section. If nothing can be picked, invite the survey instead.
+        let hasPicks = article != nil || video != nil
+
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text("For you").font(.title3.bold())
                 Spacer()
-                if hasPreferences {
+                if hasPicks {
                     Text("Based on your survey").font(.caption).foregroundStyle(.secondary)
                 }
             }
 
-            if hasPreferences {
-                let article = RecommendationRules.recommendedArticle(from: articles, level: level)
-                let video = RecommendationRules.recommendedVideo(from: ContentCatalog.videos, level: level, interests: interests)
+            if hasPicks {
                 // Side by side when they fit; stacked at large text sizes.
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 12) { cards(article: article, video: video) }

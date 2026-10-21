@@ -369,7 +369,7 @@ struct StageMovesCard: View {
                     }
                 }
                 .frame(height: 200)
-                .accessibilityLabel("\(totalUp) words moved up and \(totalDown) words moved down")
+                .accessibilityLabel("\(totalUp.counted("word")) moved up and \(totalDown.counted("word")) moved down")
             }
         }
         .insightsCard()

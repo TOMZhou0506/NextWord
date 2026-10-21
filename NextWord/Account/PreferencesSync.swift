@@ -6,7 +6,7 @@ import Foundation
 // Display settings (theme, text size) stay on each phone.
 enum PreferencesSync {
     static let syncedKeys = [
-        "learningQuestionnaireCompleted_v1", "learningQuestionnaireSkipped_v1", "heardFrom_v1", "englishLevel_v2",
+        "learningQuestionnaireCompleted_v1", "heardFrom_v1", "englishLevel_v2",
         "learningGoals_v1", "videoInterests_v1", "dailyMinutes_v1",
         "preferredStudyTime_v1", "reviewLimit", "reminderEnabled_v1", "reminderMinutes_v1"
     ]
@@ -26,10 +26,16 @@ enum PreferencesSync {
             }
     }
 
-    // Called after sign-in. Only fills an empty phone (for example a new phone);
-    // answers already on this phone are never overwritten.
+    // Finished means marked complete AND holding a valid 1–5 level (the old survey had no such level).
+    static func hasCompletedSurvey(_ defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: "learningQuestionnaireCompleted_v1")
+            && (1...5).contains(defaults.integer(forKey: "englishLevel_v2"))
+    }
+
+    // Called after sign-in. Only fills a phone without finished answers (for example a new phone);
+    // finished answers already on this phone are never overwritten.
     static func restoreIfNeeded(uid: String, into defaults: UserDefaults) async {
-        guard !defaults.bool(forKey: "learningQuestionnaireCompleted_v1") else { return }
+        guard !hasCompletedSurvey(defaults) else { return }
         do {
             let snapshot = try await Firestore.firestore().collection("users").document(uid).getDocument()
             guard let preferences = snapshot.data()?["preferences"] as? [String: Any] else { return }
