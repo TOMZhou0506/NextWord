@@ -107,7 +107,8 @@ private struct WeekDayDot: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
             ZStack {
-                Circle().fill(studied ? Color.orange : Color(.tertiarySystemFill))
+                // Green with a tick means "done", matching the finished daily task.
+                Circle().fill(studied ? Color.green : Color(.tertiarySystemFill))
                 if studied {
                     Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(.white)
                 }
