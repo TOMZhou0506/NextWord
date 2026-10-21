@@ -74,10 +74,113 @@ struct SettingsView: View {
     }
 }
 
+// The About page required by the unit: the app, the developer, and credit for every
+// library, service, source and tool used to build NextWord.
 struct AboutNextWordView: View {
     private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0" }
+
     var body: some View {
-        InformationView(title: "NextWord", symbol: "book.pages.fill", text: "Build your English through stories, videos and words worth remembering.\n\nVersion \(version) · Development preview\n\nEnglish definitions: Wordset / WordNet, licensed under CC BY-SA 4.0.\nTranslations: DeepL.\nArticle and video sources are credited on their respective screens.")
+        List {
+            Section {
+                VStack(spacing: 8) {
+                    BirdMascot(pose: .wave, size: 110)
+                    Text("NextWord").font(.title.bold())
+                    Text("Build your English through stories, videos and words worth remembering.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Text("Version \(version)").font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+
+            Section("Developer") {
+                LabeledContent("Name", value: "Xiaoyu Zhou (Tom)")
+                LabeledContent("Student ID", value: "35484632")
+                LabeledContent("Unit", value: "FIT3178 iOS App Development")
+                LabeledContent("University", value: "Monash University, 2026")
+            }
+
+            Section {
+                CreditRow(name: "Firebase iOS SDK", detail: "Authentication and Cloud Firestore · Google · Apache 2.0",
+                          link: "https://firebase.google.com")
+                CreditRow(name: "DeepL API", detail: "English to Chinese translation",
+                          link: "https://www.deepl.com/pro-api")
+                CreditRow(name: "Wordset dictionary", detail: "Offline English definitions, based on WordNet · CC BY-SA 4.0",
+                          link: "https://github.com/wordset/wordset-dictionary")
+                CreditRow(name: "YouTube IFrame Player API", detail: "Plays the video lessons inside the app",
+                          link: "https://developers.google.com/youtube/iframe_api_reference")
+            } header: {
+                Text("Libraries and services")
+            }
+
+            Section {
+                CreditRow(name: "VOA Learning English", detail: "All reading articles; each article links to its original page",
+                          link: "https://learningenglish.voanews.com")
+                ForEach(ContentCatalog.videos) { video in
+                    CreditRow(name: video.title, detail: "Video by \(video.source)", link: "https://www.youtube.com/watch?v=\(video.id)")
+                }
+            } header: {
+                Text("Content")
+            } footer: {
+                Text("All articles and videos belong to their original creators and are used for learning only.")
+            }
+
+            Section {
+                CreditRow(name: "OpenAI Whisper", detail: "Speech recognition for the video transcripts · MIT",
+                          link: "https://github.com/openai/whisper")
+                CreditRow(name: "yt-dlp", detail: "Downloads the audio used for transcription · Unlicense",
+                          link: "https://github.com/yt-dlp/yt-dlp")
+                CreditRow(name: "FFmpeg", detail: "Converts the audio for Whisper · LGPL",
+                          link: "https://ffmpeg.org")
+            } header: {
+                Text("Transcript tools")
+            } footer: {
+                Text("Used on a Mac to prepare transcripts in advance; not included in the app. See tools/README.md in the repository.")
+            }
+
+            Section("Artwork") {
+                CreditRow(name: "Blue bird app icon and mascot", detail: "The icon and nine poses were generated with ChatGPT (GPT-5.6)")
+            }
+
+            Section("Course materials") {
+                CreditRow(name: "FIT3178 Week 6 Lab", detail: "Firebase Authentication and Firestore")
+                CreditRow(name: "FIT3178 Week 10 Lab", detail: "Local notifications and notification actions")
+            }
+
+            Section("AI assistance") {
+                Text("Claude (Anthropic) was used as a coding assistant. All code was reviewed and tested by the developer, who understands and takes responsibility for it.")
+                    .font(.subheadline)
+            }
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// One acknowledgement: what was used, how it's used, and an optional link to its website.
+private struct CreditRow: View {
+    let name: String
+    let detail: String
+    var link: String? = nil
+
+    var body: some View {
+        let content = VStack(alignment: .leading, spacing: 3) {
+            Text(name).foregroundStyle(.primary)
+            Text(detail).font(.caption).foregroundStyle(.secondary)
+        }
+        if let link, let url = URL(string: link) {
+            Link(destination: url) {
+                HStack {
+                    content
+                    Spacer(minLength: 8)
+                    Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.tertiary)
+                }
+            }
+        } else {
+            content
+        }
     }
 }
 
