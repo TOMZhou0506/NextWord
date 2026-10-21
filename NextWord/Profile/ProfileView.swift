@@ -42,6 +42,21 @@ struct ProfileView: View {
             Section {
                 Button("Sign out", role: .destructive) { confirmSignOut = true }
                     .frame(maxWidth: .infinity)
+                    // iOS shows a confirmation dialog from the view it's attached to. Attaching it
+                    // to this bottom button (not the whole list) makes it rise from the bottom.
+                    .confirmationDialog("Sign out of NextWord?", isPresented: $confirmSignOut, titleVisibility: .visible) {
+                        // RootView sees that nobody is signed in and shows the sign-in screen.
+                        Button("Sign out", role: .destructive) {
+                            do {
+                                try authService.signOut()
+                            } catch {
+                                signOutError = AuthService.message(for: error)
+                            }
+                        }
+                        Button("Cancel", role: .cancel) { }
+                    } message: {
+                        Text("Your words stay saved on this phone for when you sign in again.")
+                    }
                 if let signOutError {
                     Text(signOutError).font(.caption).foregroundStyle(.red)
                 }
@@ -50,16 +65,6 @@ struct ProfileView: View {
             }
         }
         .navigationTitle("Profile")
-        .confirmationDialog("Sign out of NextWord?", isPresented: $confirmSignOut, titleVisibility: .visible) {
-            // RootView sees that nobody is signed in and shows the sign-in screen.
-            Button("Sign out", role: .destructive) {
-                do {
-                    try authService.signOut()
-                } catch {
-                    signOutError = AuthService.message(for: error)
-                }
-            }
-        }
     }
 }
 
