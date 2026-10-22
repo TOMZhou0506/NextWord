@@ -139,20 +139,6 @@ struct AboutNextWordView: View {
             } footer: {
                 Text("Used on a Mac to prepare transcripts in advance; not included in the app. See tools/README.md in the repository.")
             }
-
-            Section("Artwork") {
-                CreditRow(name: "Blue bird app icon and mascot", detail: "The icon and nine poses were generated with ChatGPT (GPT-5.6)")
-            }
-
-            Section("Course materials") {
-                CreditRow(name: "FIT3178 Week 6 Lab", detail: "Firebase Authentication and Firestore")
-                CreditRow(name: "FIT3178 Week 10 Lab", detail: "Local notifications and notification actions")
-            }
-
-            Section("AI assistance") {
-                Text("Claude (Anthropic) was used as a coding assistant. All code was reviewed and tested by the developer, who understands and takes responsibility for it.")
-                    .font(.subheadline)
-            }
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
