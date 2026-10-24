@@ -32,6 +32,19 @@ enum AccountStore {
         }
     }
 
+    // Used after the account is deleted: remove its database files and its settings from this phone.
+    static func deleteLocalData(for uid: String) {
+        let storePath = URL.applicationSupportDirectory
+            .appending(path: "Accounts", directoryHint: .isDirectory)
+            .appending(path: "\(uid).store")
+            .path(percentEncoded: false)
+        // SQLite keeps -wal and -shm files beside the main file, so remove all three.
+        for suffix in ["", "-wal", "-shm"] {
+            try? FileManager.default.removeItem(atPath: storePath + suffix)
+        }
+        UserDefaults.standard.removePersistentDomain(forName: "account.\(uid)")
+    }
+
     // Open (or create) Application Support/Accounts/<uid>.store for this account.
     static func container(for uid: String) throws -> ModelContainer {
         let folder = URL.applicationSupportDirectory.appending(path: "Accounts", directoryHint: .isDirectory)

@@ -84,6 +84,25 @@ final class AuthService: ObservableObject {
         try auth.signOut()
     }
 
+    // Delete the account for good (App Store guideline 5.1.1(v)). The order matters.
+    func deleteAccount(password: String) async throws {
+        guard let user, let email = user.email else { return }
+        let uid = user.uid
+
+        // 1. Firebase only deletes an account that signed in recently, so confirm the password first.
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        try await user.reauthenticate(with: credential)
+
+        // 2. Delete the cloud profile while still signed in: the security rules only let the owner delete it.
+        try await db.collection("users").document(uid).delete()
+
+        // 3. Delete the account itself. The auth listener then shows the sign-in screen and cancels reminders.
+        try await user.delete()
+
+        // 4. Remove this account's data from the phone last, so an error above never loses local data.
+        AccountStore.deleteLocalData(for: uid)
+    }
+
     private static func clean(_ email: String) -> String {
         email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }

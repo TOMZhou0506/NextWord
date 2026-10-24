@@ -60,6 +60,9 @@ struct ProfileView: View {
                 if let signOutError {
                     Text(signOutError).font(.caption).foregroundStyle(.red)
                 }
+                NavigationLink { DeleteAccountView() } label: {
+                    Text("Delete account").foregroundStyle(.red)
+                }
             } footer: {
                 Text("NextWord \(version)").frame(maxWidth: .infinity)
             }
