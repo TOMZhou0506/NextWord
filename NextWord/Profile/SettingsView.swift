@@ -49,9 +49,7 @@ struct SettingsView: View {
             } header: { Text("Learning") } footer: { Text("The review session size is the most words one review will include. To change your level or interests, retake the learning survey in Profile. Study reminders are in Profile too.") }
             Section {
                 NavigationLink { AboutNextWordView() } label: { Label("About NextWord", systemImage: "info.circle") }
-                NavigationLink("Data & privacy") {
-                    InformationView(title: "Data & privacy", symbol: "lock.shield", text: "Your account uses Firebase Authentication; your password is handled by Firebase and never stored by NextWord. Your display name, email and learning survey answers are saved to your account in Firebase.\n\nYour saved vocabulary and review progress are stored on this device, separately for each account. They are not uploaded yet.\n\nWord translation uses DeepL and sends the word you look up for translation. Playing embedded YouTube videos connects to YouTube.\n\nThis is a development version. A full privacy policy will be provided before release.")
-                }
+                NavigationLink { PrivacyPolicyView() } label: { Label("Privacy policy", systemImage: "lock.shield") }
                 Button("Reset preferences", role: .destructive) { confirmReset = true }
             } footer: { Text("Settings are saved automatically for this account.") }
         }
@@ -167,20 +165,5 @@ private struct CreditRow: View {
         } else {
             content
         }
-    }
-}
-
-struct InformationView: View {
-    let title: String
-    let symbol: String
-    let text: String
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                Image(systemName: symbol).font(.system(size: 52)).foregroundStyle(.blue).accessibilityHidden(true)
-                Text(title).font(.largeTitle.bold())
-                Text(text).foregroundStyle(.secondary).lineSpacing(6)
-            }.padding(24).frame(maxWidth: 650, alignment: .leading).frame(maxWidth: .infinity)
-        }.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
     }
 }
