@@ -4,7 +4,7 @@ import SwiftUI
 // It describes what the code really stores; keep it in step with PrivacyInfo.xcprivacy.
 struct PrivacyPolicyView: View {
     // The developer's contact email for privacy questions. Fill in before submitting.
-    private let contactEmail = "xzho0159@student.moanshi.edu"
+    private let contactEmail = "xzho0159@student.monash.edu"
 
     var body: some View {
         List {
