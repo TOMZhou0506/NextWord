@@ -26,9 +26,20 @@ struct AuthenticationView: View {
         let value = email.trimmingCharacters(in: .whitespacesAndNewlines)
         return value.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil
     }
+    // New passwords need 8+ characters with a lowercase letter and a number.
+    // These match the Password policy set in Firebase Authentication, which the server enforces too.
+    private var passwordRules: [(text: String, isMet: Bool)] {
+        [
+            ("At least 8 characters", password.count >= 8),
+            ("At least one lowercase letter", password.contains { $0.isLowercase }),
+            ("At least one number", password.contains { $0.isNumber })
+        ]
+    }
+    private var isStrongPassword: Bool { passwordRules.allSatisfy(\.isMet) }
+
     private var canSubmit: Bool {
         validEmail && (mode == .reset || !password.isEmpty) &&
-        (mode != .register || (password.count >= 8 && password == confirmPassword && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= AuthService.nameCharacterLimit))
+        (mode != .register || (isStrongPassword && password == confirmPassword && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= AuthService.nameCharacterLimit))
     }
     var body: some View {
         NavigationStack {
@@ -83,7 +94,15 @@ struct AuthenticationView: View {
                             }
                             .authField()
                             if mode == .register {
-                                Text("Use at least 8 characters.").font(.caption).foregroundStyle(.secondary)
+                                // Each rule ticks off as the learner types, so they know what's still missing.
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(passwordRules, id: \.text) { rule in
+                                        Label(rule.text, systemImage: rule.isMet ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(rule.isMet ? .green : .secondary)
+                                            .accessibilityLabel("\(rule.text), \(rule.isMet ? "met" : "not met")")
+                                    }
+                                }
+                                .font(.caption)
                                 fieldLabel("Confirm password")
                                 SecureField("Repeat your password", text: $confirmPassword).textContentType(.newPassword)
                                     .focused($focusedField, equals: .confirmation)

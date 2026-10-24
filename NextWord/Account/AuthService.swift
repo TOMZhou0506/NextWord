@@ -118,8 +118,8 @@ final class AuthService: ObservableObject {
             return "That email address doesn't look right."
         case .emailAlreadyInUse:
             return "An account with this email already exists. Try signing in instead."
-        case .weakPassword:
-            return "Please choose a stronger password with at least 8 characters."
+        case .weakPassword, .passwordDoesNotMeetRequirements:
+            return "Please choose a password with at least 8 characters, including a lowercase letter and a number."
         case .wrongPassword, .invalidCredential, .userNotFound:
             return "The email or password is incorrect."
         case .networkError:
