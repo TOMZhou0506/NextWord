@@ -18,11 +18,9 @@ final class SavedWord {
     var lookupKey: String
     var pronunciation: String?
     var meaning: String?
-    var exampleSentence: String?
     var stage: LearningStage = LearningStage.unfamiliar
     var savedAt: Date = Date()
     var lastReviewedAt: Date?
-    var nextReviewAt: Date?
 
     // Start a new word at the unfamiliar stage; details can be added later.
     init(word: String, meaning: String? = nil) {
