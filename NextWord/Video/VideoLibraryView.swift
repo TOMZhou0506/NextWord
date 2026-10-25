@@ -69,6 +69,8 @@ struct VideoLibraryView: View {
                 }
             }
         }
+        // Smaller gaps between the filters, the grouping picker and each group of videos.
+        .listSectionSpacing(.compact)
         .navigationTitle("Videos")
     }
 
