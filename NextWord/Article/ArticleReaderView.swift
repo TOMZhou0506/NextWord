@@ -58,6 +58,7 @@ struct ArticleReaderView: View {
         self.resourceName = resourceName
     }
 
+    // use @AppStorage Even if you restart the app, the stored data will not be lost.
     @AppStorage("highlightSavedWords") private var highlightSavedWords = true
 
     @Query private var savedWords: [SavedWord]

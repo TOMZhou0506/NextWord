@@ -47,7 +47,7 @@ Leave out `--full-video` to test a short clip first (default: 60 seconds from `-
 `--model small.en` is more accurate than `base.en` but slower.
 
 After generating a new file, add a matching entry (video ID + transcript file name)
-in `NextWord/Video/VideoLibraryView.swift`. The app refuses a transcript whose
+to `ContentCatalog.videos` in `NextWord/ContentCatalog.swift`. The app refuses a transcript whose
 `videoID` does not match the video.
 
 ## Current transcripts
