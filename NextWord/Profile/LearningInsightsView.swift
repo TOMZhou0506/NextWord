@@ -20,27 +20,10 @@ struct LearningInsightsView: View {
         return Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
     }
 
-    private struct DailyTotal: Identifiable {
-        let date: Date
-        let count: Int
-        var id: Date { date }
-    }
-
     private struct StageTotal: Identifiable {
         let stage: LearningStage
         let count: Int
         var id: LearningStage { stage }
-    }
-
-    // Include words saved before the displayed range in its starting total.
-    private var dailyTotals: [DailyTotal] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return (0..<selectedDays).compactMap { offset in
-            guard let day = calendar.date(byAdding: .day, value: offset - selectedDays + 1, to: today),
-                  let nextDay = calendar.date(byAdding: .day, value: 1, to: day) else { return nil }
-            return DailyTotal(date: day, count: words.filter { $0.savedAt < nextDay }.count)
-        }
     }
 
     private var stageTotals: [StageTotal] {
@@ -63,8 +46,6 @@ struct LearningInsightsView: View {
                 summaryTiles(history)
                 LearningCalendarCard(activityByDay: history.activityByDay)
                 AccuracyTrendCard(points: history.dailyAccuracy(since: rangeStart), rangeStart: rangeStart, rangeEnd: rangeEnd)
-                StageMovesCard(moves: history.dailyStageMoves(since: rangeStart), rangeStart: rangeStart, rangeEnd: rangeEnd)
-                vocabularyGrowth
                 currentStages
             }
             .padding(20)
@@ -92,36 +73,6 @@ struct LearningInsightsView: View {
             InsightTile(value: recentReviews.count.formatted(), title: "Words reviewed · \(selectedDays) days", symbol: "arrow.triangle.2.circlepath", colour: .cyan)
             InsightTile(value: accuracy, title: "Accuracy · \(selectedDays) days", symbol: "checkmark.seal.fill", colour: .green)
         }
-    }
-
-    private var vocabularyGrowth: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Words collected over time").font(.title3.bold())
-            Text("\(words.count.counted("word")) saved")
-                .font(.title2.weight(.semibold))
-                .monospacedDigit()
-
-            if words.isEmpty {
-                BirdMessage(pose: .sleeping, title: "No words saved yet", message: "Save a word to start your chart.", birdSize: 90)
-                    .frame(minHeight: 220)
-            } else {
-                Chart(dailyTotals) { day in
-                    LineMark(
-                        x: .value("Date", day.date),
-                        y: .value("Words", day.count)
-                    )
-                    .interpolationMethod(.stepEnd)
-                    .foregroundStyle(.blue)
-                }
-                .chartYScale(domain: 0...max(1, words.count))
-                .frame(height: 220)
-                .accessibilityLabel("Cumulative words saved in the last \(selectedDays) days")
-            }
-            Text("Counts the words in your Vocabulary now, by the date each was saved.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .insightsCard()
     }
 
     private var currentStages: some View {

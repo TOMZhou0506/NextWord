@@ -6,7 +6,6 @@ struct StudyHistory {
     // Number of study actions on each day, keyed by the start of that day.
     let activityByDay: [Date: Int]
     private let reviews: [StudyEvent]
-    private let stageMoves: [StudyEvent]
     private let calendar = Calendar.current
 
     // Saving, reviewing and changing a colour all count as studying that day.
@@ -19,8 +18,6 @@ struct StudyHistory {
         }
         activityByDay = activity
         reviews = events.filter { $0.kind == .reviewed }
-        // Reviews and manual colour changes both store the old and new stage.
-        stageMoves = events.filter { $0.oldStage != nil && $0.newStage != nil }
     }
 
     // Count back from today; if today has no study yet, start from yesterday.
@@ -99,35 +96,6 @@ struct StudyHistory {
         }
         .sorted { $0.date < $1.date }
     }
-
-    struct DailyStageMoves: Identifiable {
-        let date: Date
-        let up: Int
-        let down: Int
-        var id: Date { date }
-    }
-
-    // Compare each event's old and new colour; staying at the same colour is not a move.
-    func dailyStageMoves(since start: Date) -> [DailyStageMoves] {
-        let recent = stageMoves.filter { $0.date >= start }
-        let byDay = Dictionary(grouping: recent) { calendar.startOfDay(for: $0.date) }
-        return byDay.compactMap { day, items in
-            var up = 0
-            var down = 0
-            for item in items {
-                guard let old = item.oldStage, let new = item.newStage else { continue }
-                if new.rank > old.rank { up += 1 }
-                if new.rank < old.rank { down += 1 }
-            }
-            return up + down == 0 ? nil : DailyStageMoves(date: day, up: up, down: down)
-        }
-        .sorted { $0.date < $1.date }
-    }
-}
-
-private extension LearningStage {
-    // Red is 0 and blue is 4, so a bigger number means a better-known word.
-    var rank: Int { LearningStage.allCases.firstIndex(of: self) ?? 0 }
 }
 
 // A small summary number at the top of the insights page.
@@ -317,60 +285,6 @@ struct AccuracyTrendCard: View {
             Text("Days without reviews are left out instead of counting as 0%.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        }
-        .insightsCard()
-    }
-}
-
-// Words moving up a colour (above the line) or down a colour (below the line).
-struct StageMovesCard: View {
-    let moves: [StudyHistory.DailyStageMoves]
-    let rangeStart: Date
-    let rangeEnd: Date
-
-    private var totalUp: Int { moves.reduce(0) { $0 + $1.up } }
-    private var totalDown: Int { moves.reduce(0) { $0 + $1.down } }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Colour changes").font(.title3.bold())
-            Text("Words that moved up or down a colour, from reviews and manual changes.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            if moves.isEmpty {
-                BirdMessage(pose: .sleeping, title: "No colour changes yet", message: "Review or recolour a word to start this chart.", birdSize: 90)
-                    .frame(minHeight: 200)
-            } else {
-                HStack(spacing: 16) {
-                    Label("\(totalUp) up", systemImage: "arrow.up").foregroundStyle(.green)
-                    Label("\(totalDown) down", systemImage: "arrow.down").foregroundStyle(.red)
-                }
-                .font(.subheadline.weight(.semibold))
-                .monospacedDigit()
-
-                Chart {
-                    ForEach(moves) { day in
-                        BarMark(x: .value("Date", day.date, unit: .day), y: .value("Words", day.up))
-                            .foregroundStyle(.green)
-                        // Draw downward moves below zero so the two directions are easy to compare.
-                        BarMark(x: .value("Date", day.date, unit: .day), y: .value("Words", -day.down))
-                            .foregroundStyle(.red)
-                    }
-                    RuleMark(y: .value("Zero", 0)).foregroundStyle(.secondary)
-                }
-                .chartXScale(domain: rangeStart...rangeEnd)
-                .chartYAxis {
-                    AxisMarks { value in
-                        AxisGridLine()
-                        AxisValueLabel {
-                            if let count = value.as(Int.self) { Text("\(abs(count))") }
-                        }
-                    }
-                }
-                .frame(height: 200)
-                .accessibilityLabel("\(totalUp.counted("word")) moved up and \(totalDown.counted("word")) moved down")
-            }
         }
         .insightsCard()
     }
