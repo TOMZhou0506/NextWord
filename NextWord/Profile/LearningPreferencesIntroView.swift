@@ -12,7 +12,6 @@ struct LearningPreferencesIntroView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("heardFrom_v1") private var savedHeardFrom = ""
     @AppStorage("englishLevel_v2") private var savedLevel = 0
-    @AppStorage("englishLevel_v1") private var oldLevel = ""
     @AppStorage("learningGoals_v1") private var savedGoals = ""
     @AppStorage("videoInterests_v1") private var savedInterests = ""
     @AppStorage("dailyMinutes_v1") private var savedMinutes = 15
@@ -312,10 +311,6 @@ struct LearningPreferencesIntroView: View {
         hasLoaded = true
         heardFrom = savedHeardFrom
         level = savedLevel
-        // Answers from the old three-level survey become the closest new level.
-        if level == 0 {
-            level = ["beginner": 1, "intermediate": 3, "advanced": 5][oldLevel] ?? 0
-        }
         goals = Set(savedGoals.split(separator: ",").map(String.init))
         interests = Set(savedInterests.split(separator: ",").map(String.init))
         minutes = min(max(savedMinutes, 10), 60)

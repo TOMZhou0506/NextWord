@@ -94,8 +94,7 @@ private struct AccountScopedView: View {
             await PreferencesSync.restoreIfNeeded(uid: uid, into: accountPreferences)
 
             // Decide only after restoring, so a returning user on a new phone isn't asked again.
-            // The survey is required until it has a valid 1–5 level. This also catches accounts that
-            // skipped it before, or answered the old three-level survey.
+            // The survey is required until it has a valid 1–5 level.
             showSurvey = !PreferencesSync.hasCompletedSurvey(accountPreferences)
 
             await restoreReminder(from: accountPreferences)

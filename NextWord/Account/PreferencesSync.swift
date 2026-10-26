@@ -26,7 +26,7 @@ enum PreferencesSync {
             }
     }
 
-    // Finished means marked complete AND holding a valid 1–5 level (the old survey had no such level).
+    // Finished means marked complete AND holding a valid 1–5 level.
     static func hasCompletedSurvey(_ defaults: UserDefaults) -> Bool {
         defaults.bool(forKey: "learningQuestionnaireCompleted_v1")
             && (1...5).contains(defaults.integer(forKey: "englishLevel_v2"))
