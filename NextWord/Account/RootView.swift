@@ -4,6 +4,7 @@ import SwiftData
 import SwiftUI
 
 // Decide what to show first: a setup problem, the sign-in screen, or the app itself.
+// It only appears if the Firebase config file is missing from the app bundle.
 struct RootView: View {
     var body: some View {
         if FirebaseApp.app() != nil {
@@ -49,6 +50,9 @@ private struct AuthenticatedRootView: View {
     }
 }
 
+//AccountScopedView prepares a signed-in session: it opens the account’s own database and settings, restores the
+// survey from Firestore if needed, decides whether the survey is required, and restores that account’s
+// reminder
 // Opens the signed-in account's own database and settings, and gives them to every tab.
 private struct AccountScopedView: View {
     let uid: String
