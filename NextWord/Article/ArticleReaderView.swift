@@ -72,11 +72,13 @@ struct ArticleReaderView: View {
     }
 
     // Keep punctuation and paragraph spacing while making English words tappable.
+    // wordPattern is the rule for what counts as a word,for example: don't
     private static let wordPattern = try! NSRegularExpression(
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
 
     // Saved words drive every occurrence; mastered words stay tappable but unmarked.
+    // Deside which color for the words
     private var highlightedStages: [String: LearningStage] {
         guard highlightSavedWords else { return [:] }
         var stages: [String: LearningStage] = [:]
@@ -136,6 +138,8 @@ struct ArticleReaderView: View {
                 .presentationDetents([.medium, .large])
         }
         // Reload if the selected article changes; existing callers still read grass-grow.
+        //.task(id:) loads the article when the view appears and reloads it if the file name changes,
+        // cancelling the old task.
         .task(id: resourceName) {
             article = nil
             errorMessage = nil
@@ -147,6 +151,7 @@ struct ArticleReaderView: View {
         }
     }
 
+    // every word becomes a link, and saved words get their colour as a background."
     private func linkedParagraph(_ paragraph: String) -> AttributedString {
         var result = AttributedString()
         var cursor = paragraph.startIndex

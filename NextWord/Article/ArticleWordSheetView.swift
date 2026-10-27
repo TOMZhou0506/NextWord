@@ -29,6 +29,8 @@ struct ArticleWordSheetView: View {
         return newlySavedWord ?? savedWords.first { $0.lookupKey == key }
     }
 
+    // The sheet shows the word, its DeepL translation and Wordset definitions, with the save bar pinned at the
+    // bottom.
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -63,6 +65,7 @@ struct ArticleWordSheetView: View {
         }
     }
 
+    // @ViewBuilder is a result builder that turns a list of views and if/else statements into a single view.
     @ViewBuilder
     private var translationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -157,7 +160,9 @@ struct ArticleWordSheetView: View {
     }
 
     // The four colour buttons, used by both the row and the grid layout above.
-    @ViewBuilder private var stageButtons: some View {
+    // These are the four colour choices. Tapping one only selects it;
+    @ViewBuilder
+    private var stageButtons: some View {
         ForEach(availableStages, id: \.self) { stage in
             Button {
                 selectedStage = stage
@@ -227,6 +232,8 @@ struct ArticleWordSheetView: View {
     }
 
     // Update the existing word when possible; never create a duplicate for the same spelling.
+    // saveWord updates the existing word or inserts a new one, records a study event only when something
+    // actually changed, and saves both together.
     private func saveWord() {
         guard let selectedStage else { return }
         var insertedWord: SavedWord?
