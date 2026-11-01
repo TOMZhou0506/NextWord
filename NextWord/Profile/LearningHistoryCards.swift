@@ -2,6 +2,7 @@ import Charts
 import SwiftUI
 
 // Turn the saved StudyEvent records into the numbers the insights charts show.
+// StudyHistory is the data processing layer: it handles calculations only, not display.
 struct StudyHistory {
     // Number of study actions on each day, keyed by the start of that day.
     let activityByDay: [Date: Int]
@@ -55,10 +56,11 @@ struct StudyHistory {
     }
 
     var studiedToday: Bool {
-        activityByDay[calendar.startOfDay(for: Date())] != nil
+        studied(on: Date())
     }
 
     // The seven days of the current week, starting on the user's first weekday.
+    // ThisWeek finds the start of the current week, following the phone’s region, and builds the seven dates
     var thisWeek: [Date] {
         guard let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start else { return [] }
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }

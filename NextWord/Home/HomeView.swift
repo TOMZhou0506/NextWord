@@ -285,6 +285,7 @@ private struct LearningRecordPreview: View {
         return "\(Int((Double(correct) / Double(recent.count) * 100).rounded()))%"
     }
 
+    // count the number of words with color
     private var stageCounts: [(stage: LearningStage, count: Int)] {
         LearningStage.allCases.map { stage in (stage, words.filter { $0.stage == stage }.count) }
     }
@@ -309,10 +310,12 @@ private struct LearningRecordPreview: View {
                 if !words.isEmpty {
                     Text("Your colours").font(.caption).foregroundStyle(.secondary)
                     // One bar split into the five colours, like a progress bar for the whole vocabulary.
+                    // only x data and remove the 0 part color
                     Chart(stageCounts.filter { $0.count > 0 }, id: \.stage) { item in
                         BarMark(x: .value("Words", item.count))
                             .foregroundStyle(item.stage.colour)
                     }
+                    // chart format
                     .chartXAxis(.hidden)
                     .chartYAxis(.hidden)
                     .frame(height: 14)
@@ -326,6 +329,7 @@ private struct LearningRecordPreview: View {
         }
     }
 
+    // count the number of words
     // E.g. "7 red · 5 orange · 4 blue", skipping colours with no words.
     private var colourSummary: String {
         stageCounts.filter { $0.count > 0 }

@@ -171,7 +171,7 @@ struct AuthenticationView: View {
         }
     }
 }
-
+// authField UI 
 private extension View {
     // Rounded card fields, matching the cards used across the rest of the app.
     func authField() -> some View {
