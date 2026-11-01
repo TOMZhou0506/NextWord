@@ -1,5 +1,5 @@
 import SwiftUI
-
+// int <=> double for slider bar 
 extension Binding where Value == Int {
     // Slider works with Double, but our settings are whole numbers.
     var asDouble: Binding<Double> {
