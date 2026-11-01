@@ -183,7 +183,8 @@ struct LearningPreferencesIntroView: View {
         }
     }
 
-    // A small review practice: the word moves up when remembered and down when forgotten.
+    //The last page is a small practice review. The word changes colour as the learner taps Remembered or
+    // Forgot, an arrow shows the current stage, and the survey only finishes once the word reaches blue."
     private var colourDemoPage: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(spacing: 14) {
@@ -226,6 +227,7 @@ struct LearningPreferencesIntroView: View {
                 }
             }
         }
+        // bird animation
         .animation(.spring(duration: 0.35), value: demoStage)
     }
 
@@ -253,7 +255,7 @@ struct LearningPreferencesIntroView: View {
             ? "Mastered! Blue words leave your review list."
             : "Remembered words move up a colour; forgotten words move down. Reach blue to finish."
     }
-
+    // moveDemo for the change color and label
     private func moveDemo(by change: Int) {
         let stages = LearningStage.allCases
         guard let index = stages.firstIndex(of: demoStage) else { return }
@@ -343,7 +345,9 @@ struct LearningPreferencesIntroView: View {
     // Ask for notification permission right after the learner picks a study time,
     // when the reason for asking is easy to understand.
     private func setUpReminder(studyTimeChanged: Bool) async {
-        // Keep a time the learner already chose in Settings, unless they picked a new study time.
+        // Retaking the survey keeps the learner's choice: a reminder they turned off stays off.
+        guard isRequired || reminderEnabled else { return }
+        // Keep a time the learner already chose in Profile, unless they picked a new study time.
         if studyTimeChanged || !reminderEnabled {
             let time = NotificationManager.defaultReminderTime(for: studyTime)
             reminderMinutes = time.hour * 60 + time.minute
