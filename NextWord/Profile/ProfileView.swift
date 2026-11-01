@@ -108,7 +108,7 @@ private struct AccountRow: View {
         .padding(.vertical, 4)
     }
 }
-
+// edit profile part
 struct EditProfileView: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
