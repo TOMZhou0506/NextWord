@@ -25,7 +25,7 @@ struct LearningInsightsView: View {
         let count: Int
         var id: LearningStage { stage }
     }
-
+// get the words stage data for current learning stages chart
     private var stageTotals: [StageTotal] {
         LearningStage.allCases.map { stage in
             StageTotal(stage: stage, count: words.filter { $0.stage == stage }.count)
@@ -76,14 +76,14 @@ struct LearningInsightsView: View {
     }
 
     // MARK: - Current learning stages
-
+    
     private var currentStages: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Current learning stages").font(.title3.bold())
             Text("Today's distribution, not a history of colour changes.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-
+            //chart logic
             Chart(stageTotals) { item in
                 BarMark(
                     x: .value("Stage", item.stage.shortLabel),
@@ -108,7 +108,7 @@ struct LearningInsightsView: View {
     }
 }
 
-// MARK: - Summary tiles
+// MARK: - Summary tiles 4 girds
 
 // A small summary number at the top of 4 cards on the insights page.
 private struct InsightTile: View {

@@ -37,6 +37,7 @@ struct LearningPreferencesIntroView: View {
     @State private var hasTriedDemo = false
     @State private var hasLoaded = false
 
+    // This is the survey’s shared frame: a progress bar, the bird’s question, the page content and a pinned Continue button.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -112,7 +113,7 @@ struct LearningPreferencesIntroView: View {
 
     private var hint: String? {
         switch step {
-        case 1: "This is your own estimate. You can change it later in Settings."
+        case 1: "This is your own estimate. You can change it later by retaking this survey in Profile."
         case 2, 3: "Select all that apply."
         case 4: "You can change both of these later in Settings."
         case 5: "We'll use this for your study reminders."
