@@ -90,6 +90,7 @@ struct StudyHistory {
     }
 
     // Only days with reviews get a point, so a day off is not shown as 0%.
+    // DailyAccuracy groups the reviews by day and computes each day’s percentage correct,
     func dailyAccuracy(since start: Date) -> [DailyAccuracy] {
         let byDay = Dictionary(grouping: reviews(since: start)) { calendar.startOfDay(for: $0.date) }
         return byDay.map { day, items in
@@ -100,7 +101,7 @@ struct StudyHistory {
     }
 }
 
-// A small summary number at the top of the insights page.
+// A small summary number at the top of 4 cards on the insights page.
 struct InsightTile: View {
     let value: String
     let title: String
@@ -154,7 +155,7 @@ struct LearningCalendarCard: View {
         let start = calendar.firstWeekday - 1
         return Array(symbols[start...] + symbols[..<start])
     }
-
+// calendar part
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Title and month switcher share a row when they fit; the switcher drops below at large text sizes.
@@ -186,7 +187,7 @@ struct LearningCalendarCard: View {
 
             HStack(spacing: 4) {
                 Text("Less")
-                ForEach([0, 1, 3, 6], id: \.self) { count in
+                ForEach([0, 1, 30, 100], id: \.self) { count in
                     RoundedRectangle(cornerRadius: 3).fill(fill(for: count)).frame(width: 12, height: 12)
                 }
                 Text("More")
@@ -221,7 +222,7 @@ struct LearningCalendarCard: View {
             .font(.caption.weight(isToday ? .bold : .regular))
             .monospacedDigit()
             .frame(maxWidth: .infinity, minHeight: 34)
-            .foregroundStyle(count >= 3 ? Color.white : Color.primary)
+            .foregroundStyle(count >= 30 ? Color.white : Color.primary)
             .background(fill(for: count), in: RoundedRectangle(cornerRadius: 8))
             .overlay {
                 if isToday {
@@ -231,12 +232,12 @@ struct LearningCalendarCard: View {
             .accessibilityLabel("\(day.formatted(date: .complete, time: .omitted)), \(count) study actions")
     }
 
-    // Four shades: none, a little (1-2), some (3-5), a lot (6+).
+    // Four shades: none, a little (1-29), some (30-99), a lot (100+).
     private func fill(for count: Int) -> Color {
         switch count {
         case 0: Color(.tertiarySystemFill)
-        case 1...2: .blue.opacity(0.3)
-        case 3...5: .blue.opacity(0.65)
+        case 1...29: .blue.opacity(0.3)
+        case 30...99: .blue.opacity(0.65)
         default: .blue
         }
     }
