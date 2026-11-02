@@ -39,6 +39,7 @@ struct ContentView: View {
         .modifier(AppTextSizeModifier())
         .tint(.blue)
         .preferredColorScheme(appearance == "system" ? nil : appearance == "dark" ? .dark : .light)
+        // dark mode and light mode 
     }
 
     private func openVocabulary() {
