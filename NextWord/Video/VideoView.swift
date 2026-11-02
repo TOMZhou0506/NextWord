@@ -7,7 +7,6 @@ struct VideoView: View {
 
     @State private var playerStatus: VideoPlayerStatus = .loading
     @State private var playbackTime = 0.0
-    @State private var syncStatus = "Connecting to player clock…"
     @State private var transcript: VideoTranscript?
     @State private var transcriptError: String?
     @State private var selectedWord: SelectedVideoWord?
@@ -17,7 +16,7 @@ struct VideoView: View {
         let text: String
     }
 
-    // Use the same word boundaries as the article reader.
+    // Use the same word boundaries as the article reader. for example: don't
     private static let wordPattern = try! NSRegularExpression(
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
@@ -32,7 +31,7 @@ struct VideoView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            if geometry.size.width > geometry.size.height {
+            if geometry.size.width > geometry.size.height { // check Landscape or Portrait Orientation
                 // In landscape, keep the player and transcript visible side by side.
                 let playerWidth = min(geometry.size.width * 0.58, geometry.size.height * 16 / 9)
                 HStack(alignment: .top, spacing: 0) {
@@ -62,7 +61,7 @@ struct VideoView: View {
 
     private var player: some View {
         YouTubePlayerView(videoID: videoID, status: $playerStatus,
-                          currentTime: $playbackTime, syncStatus: $syncStatus)
+                          currentTime: $playbackTime)
             .background(.black)
     }
 
@@ -85,7 +84,7 @@ struct VideoView: View {
                     Text("Tap a word in the transcript to look it up and save it.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-
+                    // transcript part
                     if let transcript {
                         Text("\(formatTime(transcript.clipStart))–\(formatTime(transcript.clipEnd)) · \(transcript.sentences.count) sentences")
                             .font(.footnote)
@@ -138,6 +137,7 @@ struct VideoView: View {
     }
 
     // Preserve punctuation while giving each English word its own tap target.
+    // It rebuilds a sentence as an Clickable Words
     private func linkedSentence(_ sentence: String) -> AttributedString {
         var result = AttributedString()
         var cursor = sentence.startIndex

@@ -19,6 +19,7 @@ struct VideoLibraryView: View {
         }
     }
 
+    // The list has two filter menus, a segmented control for grouping, an empty message
     var body: some View {
         List {
             Section("Filters") {

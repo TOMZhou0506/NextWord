@@ -8,6 +8,8 @@ struct VideoTranscript: Decodable {
     let clipEnd: Double
     let sentences: [VideoSentence]
 
+    // VideoTranscript decodes the bundled JSON, ignoring fields it doesn’t need, and checks that the
+    // transcript’s video ID matches the video being played,
     static func load(resourceName: String, expectedVideoID: String) throws -> VideoTranscript {
         // Xcode may copy synchronized JSON resources to the app bundle's root.
         guard let url = Bundle.main.url(forResource: resourceName, withExtension: "json", subdirectory: "Video")

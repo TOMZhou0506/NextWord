@@ -1,17 +1,19 @@
 import SwiftUI
 import WebKit
-
+// UIKit is imperative: I update the views myself. SwiftUI is declarative: I describe the UI and it
+// updates when the data changes.
 // Play the curated YouTube video using the same embedded player tested earlier.
 struct YouTubePlayerView: UIViewRepresentable {
     let videoID: String
     @Binding var status: VideoPlayerStatus
     @Binding var currentTime: Double
-    @Binding var syncStatus: String
 
+    // makeCoordinator just creates the Coordinator and gives it the bindings
     func makeCoordinator() -> Coordinator {
-        Coordinator(status: $status, currentTime: $currentTime, syncStatus: $syncStatus)
+        Coordinator(status: $status, currentTime: $currentTime)
     }
 
+    // UIKit-style code makeUIView creates the web view once
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.allowsInlineMediaPlayback = true
@@ -30,6 +32,7 @@ struct YouTubePlayerView: UIViewRepresentable {
         return webView
     }
 
+    // updateUIView runs on every SwiftUI update, so the guard makes sure each video loads only once
     func updateUIView(_ webView: WKWebView, context: Context) {
         guard context.coordinator.loadedVideoID != videoID else { return }
         var components = URLComponents(string: "https://www.youtube.com/embed/\(videoID)")!
@@ -52,6 +55,9 @@ struct YouTubePlayerView: UIViewRepresentable {
         }
 
         // Give the iframe a responsive viewport instead of loading the embed page directly.
+        // To Swift, the HTML is just a multi-line string. WKWebView runs it as a real web page. I need
+        // my own page so my JavaScript can read the player’s current time every 0.25 seconds and post it
+        // back to Swift."
         let html = """
         <!doctype html>
         <html>
@@ -68,16 +74,9 @@ struct YouTubePlayerView: UIViewRepresentable {
             function report(value) {
               window.webkit.messageHandlers.playbackTime.postMessage(value);
             }
-            report('Web bridge ready');
             var player;
             function onYouTubeIframeAPIReady() {
-              report('YouTube API loaded');
-              player = new YT.Player('player', {
-                events: {
-                  onReady: function() { report('YouTube player ready'); },
-                  onError: function(event) { report('YouTube error ' + event.data); }
-                }
-              });
+              player = new YT.Player('player', {});
             }
             function sendPlaybackTime() {
               if (!player || typeof player.getCurrentTime !== 'function') return;
@@ -89,7 +88,6 @@ struct YouTubePlayerView: UIViewRepresentable {
             setInterval(sendPlaybackTime, 250);
             var script = document.createElement('script');
             script.src = 'https://www.youtube.com/iframe_api';
-            script.onerror = function() { report('YouTube API script failed'); };
             document.head.appendChild(script);
           </script>
         </body>
@@ -99,30 +97,27 @@ struct YouTubePlayerView: UIViewRepresentable {
         webView.loadHTMLString(html, baseURL: baseURL)
     }
 
+    // This declares the Coordinator, a class that receives callbacks from WKWebView, and stores the
+    // bindings it will use to write the playback time back to SwiftUI
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loadedVideoID: String?
         private let status: Binding<VideoPlayerStatus>
         private let currentTime: Binding<Double>
-        private let syncStatus: Binding<String>
 
-        init(status: Binding<VideoPlayerStatus>, currentTime: Binding<Double>, syncStatus: Binding<String>) {
+        init(status: Binding<VideoPlayerStatus>, currentTime: Binding<Double>) {
             self.status = status
             self.currentTime = currentTime
-            self.syncStatus = syncStatus
         }
 
+        // This is where JavaScript’s message arrives. It only trusts my own page, and the number
+        // is written through the binding to playbackTime.
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.name == "playbackTime", message.frameInfo.isMainFrame else { return }
-            if let phase = message.body as? String {
-                syncStatus.wrappedValue = phase
-                return
-            }
             guard let seconds = message.body as? NSNumber else { return }
             currentTime.wrappedValue = seconds.doubleValue
-            syncStatus.wrappedValue = "Clock connected"
         }
 
-        
+        // These are three WKNavigationDelegate callbacks: one for success and two for failure,
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             status.wrappedValue = .pageLoaded
         }
@@ -145,20 +140,4 @@ enum VideoPlayerStatus {
     case loading
     case pageLoaded
     case failed(String)
-
-    var message: String {
-        switch self {
-        case .loading: "Loading the YouTube player…"
-        case .pageLoaded: "Player loaded. Tap Play to confirm playback."
-        case .failed(let reason): "Player error: \(reason)"
-        }
-    }
-
-    var colour: Color {
-        switch self {
-        case .loading: .secondary
-        case .pageLoaded: .green
-        case .failed: .red
-        }
-    }
 }
