@@ -138,6 +138,7 @@ struct VocabularyReviewView: View {
         .lineLimit(1)
     }
 
+    // The header has a close button and the progress text
     private var header: some View {
         HStack {
             Button { dismiss() } label: {
@@ -159,6 +160,7 @@ struct VocabularyReviewView: View {
         }
     }
 
+    // wordCard shows the word and its colour label
     private func wordCard(_ word: SavedWord) -> some View {
         VStack(spacing: 18) {
             Text(word.stage.label)
@@ -171,11 +173,6 @@ struct VocabularyReviewView: View {
             Text(word.word)
                 .font(.system(size: wordFontSize, weight: .semibold))
                 .fixedSize(horizontal: false, vertical: true)
-
-            if let pronunciation = word.pronunciation, !pronunciation.isEmpty {
-                Text(pronunciation)
-                    .foregroundStyle(.secondary)
-            }
 
             Spacer(minLength: 24)
 
@@ -226,6 +223,7 @@ struct VocabularyReviewView: View {
     }
 
     // Save only when the user finishes the card; closing early leaves it unchanged.
+    // finishCurrentWord moves the word up or down one colour,
     private func finishCurrentWord(rememberedCorrectly: Bool) {
         guard !isFinished, rememberedBeforeReveal != nil else { return }
         let word = words[currentIndex]
@@ -236,7 +234,6 @@ struct VocabularyReviewView: View {
             : max(oldIndex - 1, 0)
         let oldStage = word.stage
         word.stage = stages[nextIndex]
-        word.lastReviewedAt = Date()
 
         // Record this card in the learning history; it is saved together with the new stage.
         modelContext.insert(StudyEvent(
@@ -263,6 +260,7 @@ struct VocabularyReviewView: View {
     }
 
     // Show Wordset's own fields without inventing missing examples or pronunciations.
+    // dictionaryDetails shows the Wordset definitions for the current word
     @ViewBuilder
     private var dictionaryDetails: some View {
         Divider()
@@ -304,6 +302,7 @@ struct VocabularyReviewView: View {
     }
 
     // Start the local lookup when a card appears, before the answer is revealed.
+    // For each new card it looks up the word off the main thread
     @MainActor
     private func loadCurrentDictionaryEntry() async {
         guard !isFinished else { return }
@@ -355,6 +354,7 @@ struct VocabularyReviewView: View {
         }
     }
 
+    // If a translation fails, the error is remembered so it won’t retry in a loop
     private func retryCurrentWord() {
         guard !isFinished else { return }
         let id = words[currentIndex].id
@@ -363,6 +363,8 @@ struct VocabularyReviewView: View {
         prefetchCurrentAndNextFive()
     }
 
+    // completionCard appears when every card is done. It shows a celebrating bird, how many words were
+    // reviewed, which reached blue in this session, and a Done button.
     private var completionCard: some View {
         VStack(spacing: 16) {
             BirdMascot(pose: .celebrate, size: 140, popsIn: true)

@@ -3,6 +3,7 @@ import Foundation
 // Every bundled article and video in one place, so the Article tab, the Video tab
 // and the Home "For you" section all use the same list.
 
+// ContentCatalog is the single list of bundled videos and articles, plus the video tags
 enum VideoDifficulty: String, CaseIterable {
     case beginner = "Beginner"
     case intermediate = "Intermediate"

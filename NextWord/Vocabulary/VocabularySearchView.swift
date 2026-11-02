@@ -45,6 +45,8 @@ struct VocabularySearchView: View {
                 Section { BirdMessage(pose: .magnifier, title: "Look up any English word", message: "Definitions come from the offline Wordset dictionary.", birdSize: 90) }
             }
 
+            // When an entry exists, this part shows its definitions, a popover for choosing the colour,
+            //and a button that adds the word or updates its colour.
             if let entry {
                 Section(entry.word) {
                     if entry.meanings.isEmpty {

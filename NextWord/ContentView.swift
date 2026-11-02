@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 
+// tab bar 
 struct ContentView: View {
     private enum AppTab { case home, article, video, vocabulary, profile }
 
