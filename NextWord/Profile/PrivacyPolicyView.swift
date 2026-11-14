@@ -3,8 +3,11 @@ import SwiftUI
 // NextWord's privacy policy, shown inside the app as App Store guideline 5.1.1(i) requires.
 // It describes what the code really stores; keep it in step with PrivacyInfo.xcprivacy.
 struct PrivacyPolicyView: View {
-    // The developer's contact email for privacy questions.
-    private let contactEmail = "xzho0159@student.monash.edu"
+    // The developer's contact emails for privacy questions: personal first, then university.
+    private let contactEmails = [
+        "xiaoyuzhou20030506@outlook.com",
+        "xzho0159@student.monash.edu"
+    ]
 
     var body: some View {
         List {
@@ -58,10 +61,10 @@ struct PrivacyPolicyView: View {
             }
 
             Section("Contact") {
-                if contactEmail.isEmpty {
-                    Text("Contact email to be added.").foregroundStyle(.secondary)
-                } else if let url = URL(string: "mailto:\(contactEmail)") {
-                    Link(contactEmail, destination: url)
+                ForEach(contactEmails, id: \.self) { email in
+                    if let url = URL(string: "mailto:\(email)") {
+                        Link(email, destination: url)
+                    }
                 }
             }
         }
