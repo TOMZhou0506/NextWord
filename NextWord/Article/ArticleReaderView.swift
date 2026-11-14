@@ -4,7 +4,6 @@ import SwiftData
 // This file reads a bundled article and displays it as scrollable text.
 // Article content is stored in a JSON file chosen by the reader.
 
-// Decodable maps the JSON fields to Swift properties.
 enum ArticleDifficulty: String, Decodable, CaseIterable {
     case beginner
     case intermediate
@@ -58,7 +57,7 @@ struct ArticleReaderView: View {
         self.resourceName = resourceName
     }
 
-    // use @AppStorage Even if you restart the app, the stored data will not be lost.
+    // Saved with @AppStorage, so the choice survives restarts.
     @AppStorage("highlightSavedWords") private var highlightSavedWords = true
 
     @Query private var savedWords: [SavedWord]
@@ -72,13 +71,12 @@ struct ArticleReaderView: View {
     }
 
     // Keep punctuation and paragraph spacing while making English words tappable.
-    // wordPattern is the rule for what counts as a word,for example: don't
+    // What counts as a word, so words like "don't" stay whole.
     private static let wordPattern = try! NSRegularExpression(
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
 
     // Saved words drive every occurrence; mastered words stay tappable but unmarked.
-    // Deside which color for the words
     private var highlightedStages: [String: LearningStage] {
         guard highlightSavedWords else { return [:] }
         var stages: [String: LearningStage] = [:]
@@ -137,9 +135,7 @@ struct ArticleReaderView: View {
             ArticleWordSheetView(word: selection.text)
                 .presentationDetents([.medium, .large])
         }
-        // Reload if the selected article changes; existing callers still read grass-grow.
-        //.task(id:) loads the article when the view appears and reloads it if the file name changes,
-        // cancelling the old task.
+        // Reload, cancelling the old task, when the selected article changes.
         .task(id: resourceName) {
             article = nil
             errorMessage = nil
@@ -151,7 +147,7 @@ struct ArticleReaderView: View {
         }
     }
 
-    // every word becomes a link, and saved words get their colour as a background."
+    // Every word becomes a link, and saved words get their colour as a background.
     private func linkedParagraph(_ paragraph: String) -> AttributedString {
         var result = AttributedString()
         var cursor = paragraph.startIndex

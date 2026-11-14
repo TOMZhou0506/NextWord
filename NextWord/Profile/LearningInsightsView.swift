@@ -25,7 +25,7 @@ struct LearningInsightsView: View {
         let count: Int
         var id: LearningStage { stage }
     }
-// get the words stage data for current learning stages chart
+// Number of words in each stage, for the stage chart.
     private var stageTotals: [StageTotal] {
         LearningStage.allCases.map { stage in
             StageTotal(stage: stage, count: words.filter { $0.stage == stage }.count)
@@ -83,7 +83,6 @@ struct LearningInsightsView: View {
             Text("Today's distribution, not a history of colour changes.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            //chart logic
             Chart(stageTotals) { item in
                 BarMark(
                     x: .value("Stage", item.stage.shortLabel),
@@ -108,9 +107,9 @@ struct LearningInsightsView: View {
     }
 }
 
-// MARK: - Summary tiles 4 girds
+// MARK: - Summary tiles
 
-// A small summary number at the top of 4 cards on the insights page.
+// One of the four summary numbers at the top on the insights page.
 private struct InsightTile: View {
     let value: String
     let title: String
@@ -166,7 +165,7 @@ private struct LearningCalendarCard: View {
         let start = calendar.firstWeekday - 1
         return Array(symbols[start...] + symbols[..<start])
     }
-// calendar part
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             // Title and month switcher share a row when they fit; the switcher drops below at large text sizes.
@@ -263,7 +262,6 @@ private struct LearningCalendarCard: View {
 // MARK: - Review accuracy
 
 // Daily share of review cards answered correctly.
-// Review accuracy Line Chart
 private struct AccuracyTrendCard: View {
     let points: [StudyHistory.DailyAccuracy]
     let rangeStart: Date
@@ -286,7 +284,6 @@ private struct AccuracyTrendCard: View {
                     PointMark(x: .value("Date", point.date, unit: .day), y: .value("Accuracy", point.percent))
                         .foregroundStyle(.green)
                 }
-                // chart format
                 .chartXScale(domain: rangeStart...rangeEnd)
                 .chartYScale(domain: 0...100)
                 .chartYAxis {

@@ -10,9 +10,6 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-// NextWordApp is the entry point and shows RootView. AppDelegate is the UIKit part: at launch it
-//configures Firebase, becomes the notification delegate and registers the snooze action, and it also
-// handles notification taps."
 // Runs once at launch: connects to Firebase and handles notifications (as in the Week 10 lab).
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(

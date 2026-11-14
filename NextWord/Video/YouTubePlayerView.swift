@@ -1,19 +1,16 @@
 import SwiftUI
 import WebKit
-// UIKit is imperative: I update the views myself. SwiftUI is declarative: I describe the UI and it
-// updates when the data changes.
-// Play the curated YouTube video using the same embedded player tested earlier.
+
+// Wraps WKWebView to play a YouTube video and report its playback time to SwiftUI.
 struct YouTubePlayerView: UIViewRepresentable {
     let videoID: String
     @Binding var status: VideoPlayerStatus
     @Binding var currentTime: Double
 
-    // makeCoordinator just creates the Coordinator and gives it the bindings
     func makeCoordinator() -> Coordinator {
         Coordinator(status: $status, currentTime: $currentTime)
     }
 
-    // UIKit-style code makeUIView creates the web view once
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.allowsInlineMediaPlayback = true
@@ -32,7 +29,7 @@ struct YouTubePlayerView: UIViewRepresentable {
         return webView
     }
 
-    // updateUIView runs on every SwiftUI update, so the guard makes sure each video loads only once
+    // Called on every SwiftUI update, so load each video only once.
     func updateUIView(_ webView: WKWebView, context: Context) {
         guard context.coordinator.loadedVideoID != videoID else { return }
         var components = URLComponents(string: "https://www.youtube.com/embed/\(videoID)")!
@@ -54,10 +51,8 @@ struct YouTubePlayerView: UIViewRepresentable {
             return
         }
 
-        // Give the iframe a responsive viewport instead of loading the embed page directly.
-        // To Swift, the HTML is just a multi-line string. WKWebView runs it as a real web page. I need
-        // my own page so my JavaScript can read the player’s current time every 0.25 seconds and post it
-        // back to Swift."
+        // Host the iframe in our own page so the IFrame API can read the current time
+        // every 0.25 seconds and post it back to Swift.
         let html = """
         <!doctype html>
         <html>
@@ -97,8 +92,7 @@ struct YouTubePlayerView: UIViewRepresentable {
         webView.loadHTMLString(html, baseURL: baseURL)
     }
 
-    // This declares the Coordinator, a class that receives callbacks from WKWebView, and stores the
-    // bindings it will use to write the playback time back to SwiftUI
+    // Receives WKWebView callbacks and writes the results back through the bindings.
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loadedVideoID: String?
         private let status: Binding<VideoPlayerStatus>
@@ -109,15 +103,14 @@ struct YouTubePlayerView: UIViewRepresentable {
             self.currentTime = currentTime
         }
 
-        // This is where JavaScript’s message arrives. It only trusts my own page, and the number
-        // is written through the binding to playbackTime.
+        // Accept playback times only from our own page, not from the embedded iframe.
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.name == "playbackTime", message.frameInfo.isMainFrame else { return }
             guard let seconds = message.body as? NSNumber else { return }
             currentTime.wrappedValue = seconds.doubleValue
         }
 
-        // These are three WKNavigationDelegate callbacks: one for success and two for failure,
+        // MARK: WKNavigationDelegate
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             status.wrappedValue = .pageLoaded
         }

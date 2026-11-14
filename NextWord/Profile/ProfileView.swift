@@ -29,7 +29,6 @@ struct ProfileView: View {
                 }
             }
 
-            // Moved here from Settings: the same section, reused as it is.
             StudyReminderSection()
 
             Section {
@@ -108,7 +107,8 @@ private struct AccountRow: View {
         .padding(.vertical, 4)
     }
 }
-// edit profile part
+
+// Edit the account's display name.
 struct EditProfileView: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss

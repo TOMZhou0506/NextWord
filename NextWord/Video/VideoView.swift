@@ -16,7 +16,7 @@ struct VideoView: View {
         let text: String
     }
 
-    // Use the same word boundaries as the article reader. for example: don't
+    // Same word boundaries as the article reader, so words like "don't" stay whole.
     private static let wordPattern = try! NSRegularExpression(
         pattern: #"[A-Za-z]+(?:['’\-][A-Za-z]+)*"#
     )
@@ -84,7 +84,6 @@ struct VideoView: View {
                     Text("Tap a word in the transcript to look it up and save it.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    // transcript part
                     if let transcript {
                         Text("\(formatTime(transcript.clipStart))–\(formatTime(transcript.clipEnd)) · \(transcript.sentences.count) sentences")
                             .font(.footnote)
@@ -137,7 +136,6 @@ struct VideoView: View {
     }
 
     // Preserve punctuation while giving each English word its own tap target.
-    // It rebuilds a sentence as an Clickable Words
     private func linkedSentence(_ sentence: String) -> AttributedString {
         var result = AttributedString()
         var cursor = sentence.startIndex

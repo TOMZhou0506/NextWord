@@ -32,7 +32,7 @@ final class NotificationManager {
     @ObservationIgnored
     private let notificationCenter = UNUserNotificationCenter.current()
 
-    // NotificationManager keeps the current permission status
+    // Whether the current permission allows scheduling reminders.
     var canScheduleNotifications: Bool {
         switch authorizationStatus {
         case .authorized, .provisional, .ephemeral: true
@@ -47,7 +47,6 @@ final class NotificationManager {
     }
 
     // Shows the system permission alert (only the first time). Returns true if allowed.
-    // @discardableResult: callers may ignore the returned value without a compiler warning.
     @discardableResult
     func requestAuthorization() async -> Bool {
         let granted = (try? await notificationCenter.requestAuthorization(options: [.alert, .sound])) ?? false
@@ -55,7 +54,7 @@ final class NotificationManager {
         return granted
     }
 
-    // Plan A: one notification that repeats at the same time every day.
+    // One notification that repeats at the same time every day.
     func scheduleDailyReminder(hour: Int, minute: Int) async {
         await refresh()
         guard canScheduleNotifications else { return }
@@ -91,7 +90,7 @@ final class NotificationManager {
         )
     }
 
-    // The survey's study time becomes a starting reminder time
+    // Turn the survey's study time into a starting reminder time.
     static func defaultReminderTime(for studyTime: String) -> (hour: Int, minute: Int) {
         switch studyTime {
         case "morning": (8, 0)

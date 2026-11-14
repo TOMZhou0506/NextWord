@@ -138,7 +138,7 @@ struct VocabularyReviewView: View {
         .lineLimit(1)
     }
 
-    // The header has a close button and the progress text
+    // The header has a close button and the progress text.
     private var header: some View {
         HStack {
             Button { dismiss() } label: {
@@ -160,7 +160,7 @@ struct VocabularyReviewView: View {
         }
     }
 
-    // wordCard shows the word and its colour label
+    // The word and its colour label.
     private func wordCard(_ word: SavedWord) -> some View {
         VStack(spacing: 18) {
             Text(word.stage.label)
@@ -223,7 +223,7 @@ struct VocabularyReviewView: View {
     }
 
     // Save only when the user finishes the card; closing early leaves it unchanged.
-    // finishCurrentWord moves the word up or down one colour,
+    // The word moves up one colour if remembered, down one if forgotten.
     private func finishCurrentWord(rememberedCorrectly: Bool) {
         guard !isFinished, rememberedBeforeReveal != nil else { return }
         let word = words[currentIndex]
@@ -260,7 +260,6 @@ struct VocabularyReviewView: View {
     }
 
     // Show Wordset's own fields without inventing missing examples or pronunciations.
-    // dictionaryDetails shows the Wordset definitions for the current word
     @ViewBuilder
     private var dictionaryDetails: some View {
         Divider()
@@ -302,7 +301,6 @@ struct VocabularyReviewView: View {
     }
 
     // Start the local lookup when a card appears, before the answer is revealed.
-    // For each new card it looks up the word off the main thread
     @MainActor
     private func loadCurrentDictionaryEntry() async {
         guard !isFinished else { return }

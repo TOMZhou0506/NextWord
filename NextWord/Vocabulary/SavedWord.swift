@@ -10,7 +10,7 @@ enum LearningStage: String, Codable, CaseIterable {
     case mastered
 }
 
-// One saved vocabulary item, shared by the article and video features later.
+// One saved vocabulary item, shared by the article, video and search features.
 @Model
 final class SavedWord {
     var id: UUID = UUID()
@@ -28,7 +28,6 @@ final class SavedWord {
 }
 
 // Which words the next review includes. Used by Vocabulary and Home.
-// It removes the blue words and then sorts by colour
 enum ReviewPlan {
     // Red through green words, least familiar first; blue words are mastered and skipped.
     static func words(from words: [SavedWord], limit: Int) -> [SavedWord] {

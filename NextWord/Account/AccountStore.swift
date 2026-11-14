@@ -3,7 +3,6 @@ import SwiftData
 
 // Gives every signed-in account its own SwiftData file, so accounts on the same phone never mix.
 // Signing out only closes the file; the data stays on the phone for the next sign-in.
-// caseless enum
 enum AccountStore {
     // Each account keeps its own settings (theme, text size, survey answers, review limit)
     // in a separate UserDefaults suite. RootView hands it to every @AppStorage in the app.
@@ -24,7 +23,7 @@ enum AccountStore {
         UserDefaults.standard.removePersistentDomain(forName: "account.\(uid)")
     }
 
-    // Open (or create) swiftdate for this account including Application Support/Accounts/<uid>.store
+    // Open (or create) this account's SwiftData store at Application Support/Accounts/<uid>.store.
     static func container(for uid: String) throws -> ModelContainer {
         let folder = URL.applicationSupportDirectory.appending(path: "Accounts", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

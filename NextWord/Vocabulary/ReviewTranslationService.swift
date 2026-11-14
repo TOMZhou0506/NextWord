@@ -1,8 +1,6 @@
 import Foundation
 
-// Translate one English word for the review card; dictionary details come later.
-// Preparing for the DeepL Translation Service: Configure the network connection, and define how to read
-// the key, send requests, and receive responses
+// Translates one English word to Chinese with the DeepL API.
 enum ReviewTranslationService {
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
@@ -30,8 +28,7 @@ enum ReviewTranslationService {
         }
         let translations: [Translation]
     }
-//translate reads the API key, sends a POST request with the word as JSON, waits for the response without
-//blocking the UI
+    // Read the API key, POST the word as JSON and return the first translation.
     static func translate(_ word: String) async throws -> String {
         guard let secretsURL = Bundle.main.url(forResource: "LocalSecrets", withExtension: "plist"),
               let secrets = try? PropertyListDecoder().decode(LocalSecrets.self, from: Data(contentsOf: secretsURL)) else {
@@ -62,7 +59,7 @@ enum ReviewTranslationService {
         return translation.text
     }
 
-    // TranslationError lists every failure with a readable message
+    // Every failure, with a readable message.
     private enum TranslationError: LocalizedError {
         case missingKey
         case invalidResponse

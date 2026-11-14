@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// tab bar 
+// The main tab bar, with one NavigationStack per tab.
 struct ContentView: View {
     private enum AppTab { case home, article, video, vocabulary, profile }
 
@@ -39,7 +39,7 @@ struct ContentView: View {
         .modifier(AppTextSizeModifier())
         .tint(.blue)
         .preferredColorScheme(appearance == "system" ? nil : appearance == "dark" ? .dark : .light)
-        // dark mode and light mode 
+        // Apply the chosen appearance; nil follows the system setting.
     }
 
     private func openVocabulary() {

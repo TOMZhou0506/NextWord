@@ -2,7 +2,7 @@ import FirebaseAuth
 import SwiftUI
 import UIKit
 
-// The "Study reminders" : turn the daily reminder on or off and pick its time.
+// The "Study reminders" section: turn the daily reminder on or off and pick its time.
 struct StudyReminderSection: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(NotificationManager.self) private var notificationManager
@@ -62,7 +62,7 @@ struct StudyReminderSection: View {
         )
     }
 
-    // setReminder asks for permission and only turns the switch on if it’s allowed.
+    // Ask for permission and only turn the switch on if it’s allowed.
     private func setReminder(_ isOn: Bool) async {
         if isOn {
             // Asks the first time; afterwards iOS returns the saved answer without an alert.
@@ -74,7 +74,7 @@ struct StudyReminderSection: View {
         await rescheduleAndSync()
     }
 
-    // it schedules or cancels the notification on this phone and uploads the setting to Firestore.
+    // Schedule or cancel the notification on this phone and uploads the setting to Firestore.
     private func rescheduleAndSync() async {
         if reminderEnabled {
             await notificationManager.scheduleDailyReminder(hour: reminderMinutes / 60, minute: reminderMinutes % 60)

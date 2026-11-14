@@ -50,9 +50,6 @@ private struct AuthenticatedRootView: View {
     }
 }
 
-//AccountScopedView prepares a signed-in session: it opens the account’s own database and settings, restores the
-// survey from Firestore if needed, decides whether the survey is required, and restores that account’s
-// reminder
 // Opens the signed-in account's own database and settings, and gives them to every tab.
 private struct AccountScopedView: View {
     let uid: String

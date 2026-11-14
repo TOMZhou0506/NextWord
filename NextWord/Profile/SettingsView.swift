@@ -72,7 +72,7 @@ struct SettingsView: View {
     }
 }
 
-// The About page required by the unit: the app, the developer, and credit for every
+// The About page: the app, the developer, and credit for every
 // library, service, source and tool used to build NextWord.
 struct AboutNextWordView: View {
     private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0" }

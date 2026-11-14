@@ -1,7 +1,6 @@
 import SwiftUI
 
-// BirdPrompt is the survey’s speech bubble
-// Used by the learning survey and reusable on other screens later.
+// A speech bubble next to the bird, used by the learning survey.
 
 struct BirdPrompt: View {
     let text: String
@@ -26,7 +25,7 @@ struct BirdPrompt: View {
     }
 }
 
-// BubbleTail is a custom Shape.
+// The small triangle that points from the bubble to the bird.
 private struct BubbleTail: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()

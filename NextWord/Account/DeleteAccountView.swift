@@ -62,7 +62,7 @@ struct DeleteAccountView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // wait for authService.deleteAccount, send 3 web request,(re-authentication, delete document, delete account)
+    // Reauthenticates, deletes the Firestore profile, then deletes the account.
     // On success RootView sees that nobody is signed in and shows the sign-in screen by itself.
     private func deleteAccount() async {
         isDeleting = true

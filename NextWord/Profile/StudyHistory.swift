@@ -59,7 +59,6 @@ struct StudyHistory {
     }
 
     // The seven days of the current week, starting on the user's first weekday.
-    // ThisWeek finds the start of the current week, following the phone’s region, and builds the seven dates
     var thisWeek: [Date] {
         guard let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start else { return [] }
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
@@ -89,7 +88,6 @@ struct StudyHistory {
     }
 
     // Only days with reviews get a point, so a day off is not shown as 0%.
-    // DailyAccuracy groups the reviews by day and computes each day’s percentage correct,
     func dailyAccuracy(since start: Date) -> [DailyAccuracy] {
         let byDay = Dictionary(grouping: reviews(since: start)) { calendar.startOfDay(for: $0.date) }
         return byDay.map { day, items in

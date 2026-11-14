@@ -1,2 +1,15 @@
 # Local development credential; never commit the key.
 NextWord/LocalSecrets.plist
+
+# macOS
+.DS_Store
+
+# Xcode user settings and build output
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Python (tools/)
+__pycache__/
+*.pyc

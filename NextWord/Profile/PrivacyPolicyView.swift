@@ -3,7 +3,7 @@ import SwiftUI
 // NextWord's privacy policy, shown inside the app as App Store guideline 5.1.1(i) requires.
 // It describes what the code really stores; keep it in step with PrivacyInfo.xcprivacy.
 struct PrivacyPolicyView: View {
-    // The developer's contact email for privacy questions. Fill in before submitting.
+    // The developer's contact email for privacy questions.
     private let contactEmail = "xzho0159@student.monash.edu"
 
     var body: some View {

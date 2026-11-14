@@ -37,7 +37,7 @@ struct LearningPreferencesIntroView: View {
     @State private var hasTriedDemo = false
     @State private var hasLoaded = false
 
-    // This is the survey’s shared frame: a progress bar, the bird’s question, the page content and a pinned Continue button.
+    // The survey's shared frame: a progress bar, the bird’s question, the page content and a pinned Continue button.
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -183,8 +183,8 @@ struct LearningPreferencesIntroView: View {
         }
     }
 
-    //The last page is a small practice review. The word changes colour as the learner taps Remembered or
-    // Forgot, an arrow shows the current stage, and the survey only finishes once the word reaches blue."
+    // The last page is a small practice review. The word changes colour as the learner taps Remembered or
+    // Forgot, an arrow shows the current stage, and the survey only finishes once the word reaches blue.
     private var colourDemoPage: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(spacing: 14) {
@@ -227,7 +227,6 @@ struct LearningPreferencesIntroView: View {
                 }
             }
         }
-        // bird animation
         .animation(.spring(duration: 0.35), value: demoStage)
     }
 
@@ -255,7 +254,7 @@ struct LearningPreferencesIntroView: View {
             ? "Mastered! Blue words leave your review list."
             : "Remembered words move up a colour; forgotten words move down. Reach blue to finish."
     }
-    // moveDemo for the change color and label
+    // Move the practice word one stage up or down.
     private func moveDemo(by change: Int) {
         let stages = LearningStage.allCases
         guard let index = stages.firstIndex(of: demoStage) else { return }
